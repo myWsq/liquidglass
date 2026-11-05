@@ -6,7 +6,6 @@ import {
   useState,
   type CSSProperties,
   type HTMLAttributes,
-  type PointerEvent,
   type ReactNode,
   type Ref,
 } from "react";
@@ -36,8 +35,6 @@ export interface LiquidProps extends HTMLAttributes<HTMLDivElement> {
   scale?: number;
   /** How wet and three-dimensional the surface looks. Defaults to 0.05. */
   bump?: number;
-  /** Pointer stirring strength; `false` or 0 turns it off. Defaults to 1. */
-  stir?: number | boolean;
   /** Freeze the flow. `prefers-reduced-motion` freezes it as well. */
   paused?: boolean;
   /** Render resolution as a fraction of device pixels. Defaults to 0.75. */
@@ -50,7 +47,7 @@ export interface LiquidProps extends HTMLAttributes<HTMLDivElement> {
 /**
  * A flowing liquid wallpaper drawn by a WebGL2 shader. Glass placed inside reads
  * the liquid under it, so `<Glass ink="auto">` keeps its text legible as the
- * currents pass. Moving the pointer stirs it.
+ * currents pass. The currents drift on their own.
  */
 export function Liquid({
   ref,
@@ -59,12 +56,10 @@ export function Liquid({
   speed = 1,
   scale = 3.4,
   bump = 0.05,
-  stir = 1,
   paused = false,
   resolution = 0.75,
   canvasProps,
   className,
-  onPointerMove,
   children,
   ...rest
 }: LiquidProps): ReactNode {
@@ -76,7 +71,6 @@ export function Liquid({
     speed,
     scale,
     bump,
-    stir: stir === true ? 1 : stir === false ? 0 : stir,
     paused,
     resolution,
   };
@@ -116,17 +110,8 @@ export function Liquid({
     [engine],
   );
 
-  const pointer = (e: PointerEvent<HTMLDivElement>) => {
-    engine?.pointer(e.clientX, e.clientY);
-    onPointerMove?.(e);
-  };
-
   return (
-    <div
-      {...rest}
-      className={className ? `liquidglass-liquid ${className}` : "liquidglass-liquid"}
-      onPointerMove={pointer}
-    >
+    <div {...rest} className={className ? `liquidglass-liquid ${className}` : "liquidglass-liquid"}>
       <canvas
         ref={canvas}
         aria-hidden="true"

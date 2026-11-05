@@ -1,23 +1,25 @@
-import * as stylex from "@stylexjs/stylex";
-import { useAtomValue, useSetAtom } from "jotai";
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { Glass } from "@myna/liquidglass";
-import { lensAtom, readingAtom, tintScaleAtom } from "../state";
+import * as stylex from "@stylexjs/stylex";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
+import { DURATION, cardAtom, lensAtom, playbackAtom, readingAtom, tintScaleAtom } from "../state";
 import { PlayerFace, type PlayerAction } from "./PlayerFace";
 
-const DURATION = 173;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
-/** The demo card: glass that you can drag across the liquid. */
+/**
+ * The demo card: glass that you can drag across the liquid. While the layer stack is
+ * on screen it stands in for the card, so the card hides instantly (no fade): the
+ * stack starts and ends as a pixel-matched copy of it.
+ */
 export function Player({ hidden }: { hidden: boolean }) {
   const lens = useAtomValue(lensAtom);
   const setReading = useSetAtom(readingAtom);
   const tintScale = useAtomValue(tintScaleAtom);
+  const [pos, setPos] = useAtom(cardAtom);
+  const [{ t, playing }, setPlayback] = useAtom(playbackAtom);
   const node = useRef<HTMLElement>(null);
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
-  const [t, setT] = useState(22);
-  const [playing, setPlaying] = useState(true);
   const [dragging, setDragging] = useState(false);
 
   // Start a little above centre; stay inside the stage when it resizes.
@@ -41,18 +43,18 @@ export function Player({ hidden }: { hidden: boolean }) {
     const ro = new ResizeObserver(fit);
     ro.observe(stage);
     return () => ro.disconnect();
-  }, []);
+  }, [setPos]);
 
   useEffect(() => {
     if (!playing) return;
-    const id = setInterval(() => setT((v) => (v + 0.25) % DURATION), 250);
+    const id = setInterval(() => setPlayback((p) => ({ ...p, t: (p.t + 0.25) % DURATION })), 250);
     return () => clearInterval(id);
-  }, [playing]);
+  }, [playing, setPlayback]);
 
   const act = (a: PlayerAction) => {
-    if (a === "play") setPlaying((v) => !v);
-    if (a === "replay") setT((v) => Math.max(0, v - 15));
-    if (a === "prev" || a === "next") setT(0);
+    if (a === "play") setPlayback((p) => ({ ...p, playing: !p.playing }));
+    if (a === "replay") setPlayback((p) => ({ ...p, t: Math.max(0, p.t - 15) }));
+    if (a === "prev" || a === "next") setPlayback((p) => ({ ...p, t: 0 }));
   };
 
   const down = (e: PointerEvent<HTMLElement>) => {
@@ -82,6 +84,7 @@ export function Player({ hidden }: { hidden: boolean }) {
       as="section"
       ref={node}
       aria-label="Glass Hours, playing"
+      aria-hidden={hidden || undefined}
       tintScale={tintScale}
       onReading={setReading}
       onPointerDown={down}
@@ -91,7 +94,7 @@ export function Player({ hidden }: { hidden: boolean }) {
       {...stylex.props(styles.player, hidden && styles.hidden, dragging && styles.dragging)}
       style={{
         transform: pos ? `translate(${pos.x}px, ${pos.y}px)` : undefined,
-        visibility: pos ? undefined : "hidden",
+        visibility: pos && !hidden ? undefined : "hidden",
       }}
     >
       <PlayerFace
@@ -99,7 +102,7 @@ export function Player({ hidden }: { hidden: boolean }) {
         duration={DURATION}
         playing={playing}
         onAction={act}
-        onSeek={(f) => setT(f * DURATION)}
+        onSeek={(f) => setPlayback((p) => ({ ...p, t: f * DURATION }))}
       />
     </Glass>
   );
@@ -117,10 +120,7 @@ const styles = stylex.create({
     userSelect: "none",
     touchAction: "none",
     willChange: "transform",
-    transitionProperty: "opacity, scale",
-    transitionDuration: ".5s",
-    transitionTimingFunction: "cubic-bezier(.2,.8,.2,1)",
   },
-  hidden: { opacity: 0, scale: 0.92, pointerEvents: "none" },
+  hidden: { pointerEvents: "none" },
   dragging: { cursor: "grabbing" },
 });

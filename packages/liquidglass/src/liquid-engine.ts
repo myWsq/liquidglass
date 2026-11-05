@@ -9,7 +9,7 @@ import {
 /**
  * The liquid. One height field h(q, t): each pass pushes x by a wave running along y
  * and y by a wave running along x. Stacked, the waves fold into smooth marbled
- * currents. A soft vortex trails the pointer. The surface is lit like a wet, glossy
+ * currents that drift on their own. The surface is lit like a wet, glossy
  * liquid — diffuse light, a sharp highlight, and a bright sky mirrored on the slopes
  * that tilt away.
  */
@@ -56,9 +56,7 @@ export interface LiquidSettings {
   scale: number;
   /** How wet and three-dimensional the surface looks. */
   bump: number;
-  /** How strongly the pointer stirs the liquid. 0 turns stirring off. */
-  stir: number;
-  /** Freeze the flow (the pointer still stirs). Reduced motion freezes it too. */
+  /** Freeze the flow. Reduced motion freezes it too. */
   paused: boolean;
   /** Render resolution as a fraction of device pixels. */
   resolution: number;
@@ -66,18 +64,15 @@ export interface LiquidSettings {
 
 const FRAG = `#version 300 es
 precision highp float;
-uniform vec2 uRes, uMouse;
-uniform float uTime, uTheme, uStir, uScale, uBump;
+uniform vec2 uRes;
+uniform float uTime, uTheme, uScale, uBump;
 uniform vec3 uDeep, uMid, uPale, uWarm, uEnv, uSpec;
 out vec4 outColor;
 
 float hash(vec2 p) { vec3 q = fract(vec3(p.xyx) * .1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
 
 float field(vec2 q, float t) {
-  vec2 d = q - uMouse;
-  float a = uStir * exp(-dot(d, d) * 7.);
-  float c = cos(a), s = sin(a);
-  vec2 p = (uMouse + mat2(c, s, -s, c) * d) * uScale;
+  vec2 p = q * uScale;
   for (int i = 1; i <= 6; i++) {
     float fi = float(i);
     p.x += .62 / fi * sin(fi * p.y + t + .3 * fi) + .5;
@@ -115,7 +110,6 @@ void main() {
 
 const VERT = "#version 300 es\nin vec2 p;\nvoid main() { gl_Position = vec4(p, 0., 1.); }";
 const KEYS = ["deep", "mid", "pale", "warm", "env", "spec"] as const;
-const SWIRL = 2.4;
 
 type RGB = [number, number, number];
 
@@ -130,10 +124,6 @@ export class LiquidEngine {
   private palette = { light: resolve("light"), dark: resolve("dark") };
   private time = 12;
   private mix: number;
-  private stirNow = 0;
-  private mouse: [number, number] = [0.5, 0.5];
-  private mouseTarget: [number, number] = [0.5, 0.5];
-  private lastMove = -1e9;
   private raf = 0;
   private frameListeners = new Set<() => void>();
   /** True while frame listeners run: the WebGL buffer still holds this frame. */
@@ -183,7 +173,7 @@ export class LiquidEngine {
     if (!this.gl) return;
     this.last = performance.now();
     const tick = (now: number) => {
-      this.step(Math.min(0.05, (now - this.last) / 1000), now);
+      this.step(Math.min(0.05, (now - this.last) / 1000));
       this.last = now;
       this.draw();
       this.drawn = true;
@@ -217,15 +207,6 @@ export class LiquidEngine {
     this.notify();
   }
 
-  /** Point the vortex at a viewport position. */
-  pointer(clientX: number, clientY: number): void {
-    const box = this.canvas.getBoundingClientRect();
-    if (!box.height) return;
-    this.mouseTarget = [(clientX - box.left) / box.height, (clientY - box.top) / box.height];
-    if (this.stirNow < 0.02) this.mouse = [...this.mouseTarget];
-    this.lastMove = performance.now();
-  }
-
   /** Renders the current frame. The canvas is only readable in the same task. */
   draw(): void {
     const gl = this.gl;
@@ -233,10 +214,8 @@ export class LiquidEngine {
     const u = this.uniforms;
     const p = this.palette;
     gl.uniform2f(u.uRes, this.canvas.width, this.canvas.height);
-    gl.uniform2f(u.uMouse, this.mouse[0], this.mouse[1]);
     gl.uniform1f(u.uTime, this.time);
     gl.uniform1f(u.uTheme, this.mix);
-    gl.uniform1f(u.uStir, this.stirNow * SWIRL * this.settings.stir);
     gl.uniform1f(u.uScale, this.settings.scale);
     gl.uniform1f(u.uBump, this.settings.bump);
     for (const key of KEYS) {
@@ -279,15 +258,10 @@ export class LiquidEngine {
     this.stop();
   }
 
-  private step(dt: number, now: number): void {
+  private step(dt: number): void {
     const s = this.settings;
     if (!s.paused && !this.reduced?.matches) this.time += dt * s.speed;
     this.mix += ((s.theme === "dark" ? 1 : 0) - this.mix) * (1 - Math.exp(-dt * 4));
-    const k = 1 - Math.exp(-dt * 3);
-    this.mouse[0] += (this.mouseTarget[0] - this.mouse[0]) * k;
-    this.mouse[1] += (this.mouseTarget[1] - this.mouse[1]) * k;
-    const want = now - this.lastMove < 900 ? 1 : 0;
-    this.stirNow += (want - this.stirNow) * (1 - Math.exp(-dt * (want ? 2.5 : 0.8)));
   }
 
   private setupGL(): WebGL2RenderingContext | null {
@@ -301,7 +275,7 @@ export class LiquidEngine {
     const loc = gl.getAttribLocation(prog, "p");
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    for (const n of ["uRes", "uMouse", "uTime", "uTheme", "uStir", "uScale", "uBump"])
+    for (const n of ["uRes", "uTime", "uTheme", "uScale", "uBump"])
       this.uniforms[n] = gl.getUniformLocation(prog, n);
     for (const key of KEYS) {
       const n = "u" + key[0].toUpperCase() + key.slice(1);

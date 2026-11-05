@@ -2,8 +2,9 @@ import { Banner } from "@astryxdesign/core/Banner";
 import { MetadataList, MetadataListItem } from "@astryxdesign/core/MetadataList";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { supportsLens } from "@myna/liquidglass";
+import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
-import { lensAtom, readingAtom } from "../state";
+import { lensAtom, readingAtom, tintScaleAtom } from "../state";
 import { Code, Eyebrow, Hint, Lead, Mono } from "./parts";
 
 const FOUR = `.player {
@@ -13,21 +14,24 @@ const FOUR = `.player {
   color: var(--glass-ink);
 }`;
 
-export function Declarations() {
+/** The four declarations, and how the card reads the wallpaper to fill them in. */
+export function Material() {
   const r = useAtomValue(readingAtom);
-  const light = r?.ink === "light";
-  const tint = Math.round((r?.tint ?? 0.12) * 100);
+  const scale = useAtomValue(tintScaleAtom);
   const [lens, setLens] = useAtom(lensAtom);
+  const light = r?.ink === "light";
+  const appearance = light ? "dark" : "light";
+  const tint = Math.round((r?.tint ?? 0.12) * 100);
   const filterOk = supportsLens();
   const running = lens === "auto" ? (filterOk ? "filter" : "canvas") : lens;
   return (
     <>
-      <Eyebrow>00 Four declarations</Eyebrow>
+      <Eyebrow>Four declarations</Eyebrow>
       <Lead>
         Any component turns to glass by trading four declarations for the material’s tokens.
       </Lead>
       <Code code={FOUR} />
-      <div style={{ marginTop: 24 }}>
+      <div {...stylex.props(styles.block)}>
         <MetadataList label={{ position: "start", width: 120 }}>
           <MetadataListItem label="--glass-tint">
             <Mono>
@@ -50,7 +54,7 @@ export function Declarations() {
           </MetadataListItem>
         </MetadataList>
       </div>
-      <div style={{ marginTop: 22, display: "flex", alignItems: "center", gap: 14 }}>
+      <div {...stylex.props(styles.switch)}>
         <Mono dim>rim lens</Mono>
         <SegmentedControl
           label="How the rim lens runs"
@@ -65,11 +69,10 @@ export function Declarations() {
       </div>
       <Hint>
         The filter is Chromium’s; the canvas copies the liquid under the glass and bends it on the
-        CPU, which every browser can do. Drag the card across the wallpaper, or move the pointer to
-        stir the liquid. The sun button, the tint pill and the card are all the same material.
+        CPU, which every browser can do.
       </Hint>
-      {supportsLens() ? null : (
-        <div style={{ marginTop: 18 }}>
+      {filterOk ? null : (
+        <div {...stylex.props(styles.banner)}>
           <Banner
             status="info"
             title="Canvas lens"
@@ -77,6 +80,44 @@ export function Declarations() {
           />
         </div>
       )}
+
+      <div {...stylex.props(styles.section)}>
+        <Eyebrow>Light &amp; dark</Eyebrow>
+        <Lead>
+          The card reads the wallpaper under it and picks its ink. The tint’s strength is kept apart
+          for light and dark.
+        </Lead>
+        <MetadataList label={{ position: "start", width: 120 }}>
+          <MetadataListItem label="luminance">
+            <Mono>{r ? r.luminance.toFixed(2) : "—"}</Mono>{" "}
+            <Mono dim>the wallpaper under the card</Mono>
+          </MetadataListItem>
+          <MetadataListItem label="ink">
+            <Mono>{r?.ink ?? "dark"}</Mono> <Mono dim>light below 0.5</Mono>
+          </MetadataListItem>
+          <MetadataListItem label="tint">
+            <Mono dim={appearance !== "light"}>light ×{scale.light.toFixed(2)}</Mono> ·{" "}
+            <Mono dim={appearance !== "dark"}>dark ×{scale.dark.toFixed(2)}</Mono>{" "}
+            <Mono dim>set per theme</Mono>
+          </MetadataListItem>
+          <MetadataListItem label="wash">
+            <Mono>{tint}%</Mono>{" "}
+            <Mono dim>6–22% by busyness (σ {r ? r.busyness.toFixed(2) : "—"})</Mono>
+          </MetadataListItem>
+        </MetadataList>
+        <Hint>
+          Drag the card from a pale current into a deep one, or flip the wallpaper with the button
+          in the corner. The tint pill edits only the current theme’s multiplier. The sun button,
+          the pill and the card are all the same material.
+        </Hint>
+      </div>
     </>
   );
 }
+
+const styles = stylex.create({
+  block: { marginTop: 24 },
+  switch: { marginTop: 22, display: "flex", alignItems: "center", gap: 14 },
+  banner: { marginTop: 18 },
+  section: { marginTop: 44, paddingTop: 28, borderTop: "1px solid #1a1b1f" },
+});

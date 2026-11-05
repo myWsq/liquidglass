@@ -154,7 +154,7 @@ Renders a `div` by default; pass `as` for any other element, and its props come 
 
 ### `<Liquid>`
 
-A flowing liquid wallpaper drawn by a WebGL2 shader. Moving the pointer stirs it; glass
+A flowing liquid wallpaper drawn by a WebGL2 shader; the currents drift on their own. Glass
 inside reads it.
 
 | Prop          | Default   | Description                                                              |
@@ -164,7 +164,6 @@ inside reads it.
 | `speed`       | `1`       | Flow speed multiplier.                                                   |
 | `scale`       | `3.4`     | How many currents fit on screen.                                         |
 | `bump`        | `0.05`    | How wet and three-dimensional the surface looks.                         |
-| `stir`        | `1`       | Pointer stirring strength; `false` turns it off.                         |
 | `paused`      | `false`   | Freeze the flow.                                                         |
 | `resolution`  | `0.75`    | Render resolution as a fraction of device pixels.                        |
 | `canvasProps` |           | `className` and `style` for the canvas, e.g. to blur it behind a dialog. |
@@ -193,13 +192,14 @@ browser can run it as a filter.
 | `<Liquid>`                  | ✓             | ✓                |
 
 Without WebGL2, `<Liquid>` renders one still frame of the same liquid on the CPU. With
-`prefers-reduced-motion`, it stops flowing (the pointer still stirs it).
+`prefers-reduced-motion`, it holds still.
 
 ## The demo
 
-[The demo](https://mywsq.github.io/liquidglass/) is `apps/pages`: the player, the six layers pulled apart
-in 3D, and the light/dark reading, live, with a switch between the filter and canvas
-lens.
+[The demo](https://mywsq.github.io/liquidglass/) is `apps/pages`. **Material** shows the
+four declarations and the card's live light/dark reading, with a switch between the
+filter and canvas lens. **Layers** flies the card to the middle and pulls its six layers
+apart in 3D, then puts it back where you left it.
 
 ```sh
 pnpm install
