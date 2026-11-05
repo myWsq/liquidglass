@@ -24,5 +24,11 @@ Every package shares one version (changesets `fixed`). Only `@myna/liquidglass` 
    The `@myna` org uses **staged publishing**: the upload is held, and the registry only
    shows a `0.0.0-stage` placeholder until the user approves the version on npmjs.com.
    A 404 or `0.0.0-stage` right after publishing is expected, not a failure.
+   **An `EOTP` error does not mean nothing was uploaded.** With staged publishing the
+   tarball can still be held, and it goes live once the user approves it, so a retry
+   later finds the version taken (`No unpublished projects to publish`). After any
+   publish attempt, check `npm view @myna/liquidglass versions --prefer-online` and the
+   staged list on npmjs.com before retrying. Never re-run a release without bumping
+   the version if that version might be staged.
 6. **Verify.** `npm view @myna/liquidglass version dist-tags`, and install it in a scratch Vite
    app to confirm `import { Glass } from "@myna/liquidglass"` and `@myna/liquidglass/styles.css` resolve.
