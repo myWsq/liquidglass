@@ -1,22 +1,36 @@
 import * as stylex from "@stylexjs/stylex";
 import { Outlet } from "@tanstack/react-router";
+import { GitHubIcon, REPO } from "./GitHubIcon";
+import { useNarrow } from "./narrow";
+import { Code } from "./notes/parts";
 import { PerfMeter, showPerf } from "./PerfMeter";
 import { Stage } from "./stage/Stage";
 
 export function Shell() {
+  const narrow = useNarrow();
   return (
     <main {...stylex.props(styles.app)}>
       <Stage />
       <section {...stylex.props(styles.notes)}>
-        <header {...stylex.props(styles.header)}>
-          <span {...stylex.props(styles.name)}>@myna/liquidglass</span>
-          <a href="https://github.com/myWsq/liquidglass" {...stylex.props(styles.link)}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            GitHub
-          </a>
-        </header>
+        {narrow ? (
+          // The stage already shows the name; open the notes with what it is.
+          <div {...stylex.props(styles.intro)}>
+            <h1 {...stylex.props(styles.title)}>Liquid glass for React.</h1>
+            <p {...stylex.props(styles.pitch)}>
+              A rim that bends the light, a line where it catches, and ink that reads the wallpaper.
+              One component, one stylesheet.
+            </p>
+            <Code code="npm install @myna/liquidglass" language="bash" />
+          </div>
+        ) : (
+          <header {...stylex.props(styles.header)}>
+            <span {...stylex.props(styles.name)}>@myna/liquidglass</span>
+            <a href={REPO} {...stylex.props(styles.link)}>
+              <GitHubIcon />
+              GitHub
+            </a>
+          </header>
+        )}
         <Outlet />
       </section>
       {showPerf ? <PerfMeter /> : null}
@@ -29,7 +43,8 @@ const WIDE = "@media (min-width: 1040px)";
 const styles = stylex.create({
   app: {
     display: "grid",
-    gridTemplateRows: { default: "minmax(440px, 62vh) auto", [WIDE]: "none" },
+    // Stacked, the stage opens the page and gets most of the first screen.
+    gridTemplateRows: { default: "minmax(520px, 80svh) auto", [WIDE]: "none" },
     gridTemplateColumns: { default: "none", [WIDE]: "1fr 540px" },
     minHeight: "100%",
     height: { default: "auto", [WIDE]: "100vh" },
@@ -41,6 +56,23 @@ const styles = stylex.create({
     overflow: "auto",
     borderTop: { default: "1px solid #1a1b1f", [WIDE]: "none" },
     borderLeft: { default: "none", [WIDE]: "1px solid #1a1b1f" },
+  },
+  intro: { paddingBottom: 30, marginBottom: 30, borderBottom: "1px solid #1a1b1f" },
+  title: {
+    margin: 0,
+    fontSize: 28,
+    fontWeight: 650,
+    letterSpacing: "-0.025em",
+    lineHeight: 1.15,
+    color: "#f4f4f5",
+  },
+  pitch: {
+    marginTop: 10,
+    marginBottom: 18,
+    fontSize: 15,
+    lineHeight: 1.5,
+    color: "#a1a4ab",
+    textWrap: "pretty",
   },
   header: {
     display: "flex",

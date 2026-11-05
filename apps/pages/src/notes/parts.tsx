@@ -2,6 +2,7 @@ import { CodeBlock } from "@astryxdesign/core/CodeBlock";
 import { Text } from "@astryxdesign/core/Text";
 import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
+import { useNarrow } from "../narrow";
 
 export function Eyebrow({ children }: { children: ReactNode }) {
   return <div {...stylex.props(styles.eyebrow)}>{children}</div>;
@@ -24,6 +25,8 @@ export function Hint({ children }: { children: ReactNode }) {
 }
 
 export function Code({ code, language = "css" }: { code: string; language?: string }) {
+  // On a phone, long lines scroll sideways instead of breaking mid-word.
+  const narrow = useNarrow();
   return (
     <CodeBlock
       code={code}
@@ -31,9 +34,14 @@ export function Code({ code, language = "css" }: { code: string; language?: stri
       size="sm"
       width="100%"
       hasLanguageLabel={false}
-      isWrapped
+      isWrapped={!narrow}
     />
   );
+}
+
+/** Label beside the value on wide screens, above it on narrow ones. */
+export function useListLabel(): { position: "start" | "top"; width?: number } {
+  return useNarrow() ? { position: "top" } : { position: "start", width: 120 };
 }
 
 /** Monospace value for readouts. */

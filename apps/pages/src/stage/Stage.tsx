@@ -4,8 +4,10 @@ import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
 import { cardAtom, explodedAtom, themeAtom } from "../state";
 import { ExplodeButton } from "./ExplodeButton";
+import { useNarrow } from "../narrow";
 import { LayerStack } from "./LayerStack";
 import { ThemeButton } from "./ThemeButton";
+import { TopBar } from "./TopBar";
 import { TintPill } from "./TintPill";
 import { WeatherCard } from "./WeatherCard";
 
@@ -14,6 +16,7 @@ export function Stage() {
   const [exploded, setExploded] = useAtom(explodedAtom);
   const setCard = useSetAtom(cardAtom);
   const liquid = useRef<LiquidHandle>(null);
+  const narrow = useNarrow();
   // After the layers go back together the stack keeps the stage until it has landed.
   const [returning, setReturning] = useState(false);
   useEffect(() => {
@@ -42,6 +45,7 @@ export function Stage() {
         }}
       />
       <WeatherCard hidden={stackShown} />
+      {narrow ? <TopBar /> : null}
       <ExplodeButton />
       <ThemeButton />
       <TintPill visible={!stackShown} />

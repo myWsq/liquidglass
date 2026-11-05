@@ -5,7 +5,7 @@ import { supportsLens, type Tint } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
 import { lensAtom, readingAtom, themeAtom, tintAtom } from "../state";
-import { Code, Eyebrow, Hint, Lead, Mono } from "./parts";
+import { Code, Eyebrow, Hint, Lead, Mono, useListLabel } from "./parts";
 
 const TOKENS = `.my-card {
   background: var(--glass-tint);
@@ -45,6 +45,7 @@ export function Material() {
   const tintSetting = useAtomValue(tintAtom);
   const theme = useAtomValue(themeAtom);
   const [lens, setLens] = useAtom(lensAtom);
+  const listLabel = useListLabel();
   const light = r?.ink === "light";
   const appearance = light ? "dark" : "light";
   const tint = Math.round((r?.tint ?? 0.12) * 100);
@@ -94,7 +95,7 @@ export function Material() {
         <Code code={TOKENS} />
       </div>
       <div {...stylex.props(styles.block)}>
-        <MetadataList label={{ position: "start", width: 120 }}>
+        <MetadataList label={listLabel}>
           <MetadataListItem label="--glass-tint">
             <Mono>
               rgb({light ? "12 16 40" : "255 255 255"} / {tint}%) + rim glow
@@ -123,7 +124,7 @@ export function Material() {
           The card reads the wallpaper under it and picks its ink. The tint’s strength is kept apart
           for light and dark.
         </Lead>
-        <MetadataList label={{ position: "start", width: 120 }}>
+        <MetadataList label={listLabel}>
           <MetadataListItem label="luminance">
             <Mono>{r ? r.luminance.toFixed(2) : "—"}</Mono>{" "}
             <Mono dim>the wallpaper under the card</Mono>
