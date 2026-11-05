@@ -26,14 +26,14 @@ function cardCode(theme: string, lens: string, tint: { light: Tint; dark: Tint }
   const open = props.length
     ? `<Glass\n    as="section"\n    ${props.join("\n    ")}\n  >`
     : `<Glass as="section">`;
-  return `import { Glass, Liquid } from "@myna/liquidglass";
+  return `import { Glass, Ink, Liquid } from "@myna/liquidglass";
 import "@myna/liquidglass/styles.css";
 
 <Liquid theme="${theme}">
   ${open}
-    <h3 className="liquidglass-ink">Kyoto</h3>
-    <p className="liquidglass-ink">23°</p>
-    <p className="liquidglass-sub">H:26° L:17°</p>
+    <Ink as="h3">Kyoto</Ink>
+    <Ink as="p">23°</Ink>
+    <Ink as="p" tone="secondary">H:26° L:17°</Ink>
     {/* … */}
   </Glass>
 </Liquid>`;

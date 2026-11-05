@@ -1,8 +1,7 @@
-import { Glass } from "@myna/liquidglass";
+import { Glass, Ink } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
 import { explodedAtom, lensAtom, tintAtom } from "../state";
-import { withClass } from "../sx";
 
 /** Pulls the card apart into its six layers, and puts it back. */
 export function ExplodeButton() {
@@ -23,7 +22,7 @@ export function ExplodeButton() {
       onClick={() => setExploded(!exploded)}
       {...stylex.props(styles.button)}
     >
-      <span {...withClass("liquidglass-ink", styles.icon)}>
+      <Ink {...stylex.props(styles.icon)}>
         <svg
           width="20"
           height="20"
@@ -42,7 +41,7 @@ export function ExplodeButton() {
             <path d="M3 16l9 4.5 9-4.5" />
           </g>
         </svg>
-      </span>
+      </Ink>
     </Glass>
   );
 }

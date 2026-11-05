@@ -1,6 +1,6 @@
+import { Ink } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
 import { useId } from "react";
-import { withClass } from "../sx";
 
 export type Unit = "c" | "f";
 type Sky = "sun" | "partly" | "cloud" | "dusk" | "moon";
@@ -25,44 +25,51 @@ const HOURS: { at: string; temp: number; sky: Sky }[] = [
 const deg = (c: number, unit: Unit) => `${Math.round(unit === "c" ? c : (c * 9) / 5 + 32)}°`;
 
 /**
- * The demo card's contents: a weather widget. Ink comes from the glass around it
- * (`liquidglass-ink`, `liquidglass-sub`), so it reads on light glass and dark glass.
+ * The demo card's contents: a weather widget. Its text and icons are `<Ink>`, so they
+ * follow the glass around them and read on light glass and dark glass.
  */
 export function WeatherFace({ unit, onUnit }: { unit: Unit; onUnit?: (unit: Unit) => void }) {
   return (
     <>
       <div {...stylex.props(styles.top)}>
         <div>
-          <div {...withClass("liquidglass-ink", styles.city)}>
+          <Ink as="div" {...stylex.props(styles.city)}>
             {NOW.city}
             <PinIcon />
-          </div>
-          <div {...withClass("liquidglass-ink", styles.temp)}>{deg(NOW.temp, unit)}</div>
+          </Ink>
+          <Ink as="div" {...stylex.props(styles.temp)}>
+            {deg(NOW.temp, unit)}
+          </Ink>
         </div>
         <div {...stylex.props(styles.side)}>
-          <button
+          <Ink
+            as="button"
             type="button"
             tabIndex={onUnit ? 0 : -1}
             aria-label={unit === "c" ? "Show Fahrenheit" : "Show Celsius"}
             onClick={() => onUnit?.(unit === "c" ? "f" : "c")}
-            {...withClass("liquidglass-ink", styles.unit)}
+            {...stylex.props(styles.unit)}
           >
             °{unit === "c" ? "C" : "F"}
-          </button>
+          </Ink>
           <SkyIcon sky={NOW.sky} size={34} />
-          <div {...withClass("liquidglass-ink", styles.label)}>{NOW.label}</div>
-          <div {...withClass("liquidglass-sub", styles.range)}>
+          <Ink as="div" {...stylex.props(styles.label)}>
+            {NOW.label}
+          </Ink>
+          <Ink as="div" tone="secondary" {...stylex.props(styles.range)}>
             H:{deg(NOW.hi, unit)} L:{deg(NOW.lo, unit)}
-          </div>
+          </Ink>
         </div>
       </div>
-      <div {...withClass("liquidglass-ink", styles.rule)} />
+      <Ink as="div" {...stylex.props(styles.rule)} />
       <div {...stylex.props(styles.hours)}>
         {HOURS.map((h) => (
           <div key={h.at} {...stylex.props(styles.hour)}>
-            <span {...withClass("liquidglass-sub", styles.at)}>{h.at}</span>
+            <Ink tone="secondary" {...stylex.props(styles.at)}>
+              {h.at}
+            </Ink>
             <SkyIcon sky={h.sky} size={22} />
-            <span {...withClass("liquidglass-ink", styles.small)}>{deg(h.temp, unit)}</span>
+            <Ink {...stylex.props(styles.small)}>{deg(h.temp, unit)}</Ink>
           </div>
         ))}
       </div>
@@ -102,7 +109,8 @@ function SkyIcon({ sky, size }: { sky: Sky; size: number }) {
     "M7.5 19h9.25a4.25 4.25 0 0 0 .54-8.47A5.75 5.75 0 0 0 6.2 11.6 3.75 3.75 0 0 0 7.5 19z";
   const cloud = <path d={CLOUD} />;
   return (
-    <svg
+    <Ink
+      as="svg"
       width={size}
       height={size}
       viewBox="0 0 24 24"
@@ -112,7 +120,6 @@ function SkyIcon({ sky, size }: { sky: Sky; size: number }) {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      className="liquidglass-ink"
     >
       {sky === "sun" && sun(12, 12, 4)}
       {sky === "partly" && (
@@ -144,7 +151,7 @@ function SkyIcon({ sky, size }: { sky: Sky; size: number }) {
           fillOpacity=".18"
         />
       )}
-    </svg>
+    </Ink>
   );
 }
 

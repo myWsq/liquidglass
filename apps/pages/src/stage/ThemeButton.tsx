@@ -1,8 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
-import { Glass } from "@myna/liquidglass";
+import { Glass, Ink } from "@myna/liquidglass";
 import { lensAtom, themeAtom, tintAtom } from "../state";
-import { withClass } from "../sx";
 import { Icons } from "./icons";
 
 export function ThemeButton() {
@@ -23,9 +22,7 @@ export function ThemeButton() {
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
       {...stylex.props(styles.button)}
     >
-      <span {...withClass("liquidglass-ink", styles.icon)}>
-        {theme === "light" ? Icons.sun : Icons.moon}
-      </span>
+      <Ink {...stylex.props(styles.icon)}>{theme === "light" ? Icons.sun : Icons.moon}</Ink>
     </Glass>
   );
 }

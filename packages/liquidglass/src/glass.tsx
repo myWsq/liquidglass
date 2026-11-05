@@ -15,14 +15,14 @@ import { clamp, useBackdrop, type BackdropReading } from "./backdrop";
 import { applyLens, createLensMap, supportsLens, type LensMap } from "./lens";
 
 /** Dark ink reads on light glass; light ink reads on dark glass. */
-export type Ink = "dark" | "light";
+export type InkColor = "dark" | "light";
 
 /** A wash strength, 0–1, or `"auto"` to follow the backdrop. */
 export type Tint = number | "auto";
 
 /** What a glass element decided after reading its backdrop. */
 export interface GlassReading extends BackdropReading {
-  ink: Ink;
+  ink: InkColor;
   /** The white (or night) wash actually applied, 0–1. */
   tint: number;
 }
@@ -57,7 +57,7 @@ export interface GlassOwnProps<T extends ElementType = "div"> {
   /** Multiplier on the wash, per appearance — light glass and dark glass. */
   tintScale?: number | { light?: number; dark?: number };
   /** `"auto"` picks dark ink over bright backdrops and light ink over dim ones. */
-  ink?: Ink | "auto";
+  ink?: InkColor | "auto";
   /**
    * How the rim lens runs. `"filter"` is an SVG filter in `backdrop-filter` (Chromium).
    * `"canvas"` copies the backdrop and refracts it in a canvas, which works in every
@@ -165,7 +165,7 @@ export function Glass<T extends ElementType = "div">({
   // Dark ink sits on light glass, light ink on dark glass.
   const tintLight: Tint = typeof tint === "object" ? (tint.light ?? "auto") : tint;
   const tintDark: Tint = typeof tint === "object" ? (tint.dark ?? "auto") : tint;
-  const fixedInk: Ink = ink === "auto" ? "dark" : ink;
+  const fixedInk: InkColor = ink === "auto" ? "dark" : ink;
   const fixedSpec = fixedInk === "dark" ? tintLight : tintDark;
   const fixedTint = clamp(
     (fixedSpec === "auto" ? 0.12 : fixedSpec) * (fixedInk === "dark" ? scaleLight : scaleDark),
@@ -176,13 +176,13 @@ export function Glass<T extends ElementType = "div">({
 
   // Reading the backdrop writes straight to the element: it runs several times a
   // second while the wallpaper moves, and nothing in the React tree depends on it.
-  const inkNow = useRef<Ink>(fixedInk);
+  const inkNow = useRef<InkColor>(fixedInk);
   const read = useEffectEvent(() => {
     const el = node.current;
     if (!el || !backdrop) return;
     const r = backdrop.sample(el.getBoundingClientRect());
     if (!r) return;
-    let next: Ink = ink === "auto" ? inkNow.current : ink;
+    let next: InkColor = ink === "auto" ? inkNow.current : ink;
     if (ink === "auto") {
       if (next === "dark" && r.luminance < 0.47) next = "light";
       else if (next === "light" && r.luminance > 0.53) next = "dark";

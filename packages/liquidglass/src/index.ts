@@ -1,9 +1,10 @@
+export { Ink, type InkOwnProps, type InkProps } from "./ink";
 export {
   Glass,
   type GlassOwnProps,
   type GlassProps,
   type GlassReading,
-  type Ink,
+  type InkColor,
   type Tint,
 } from "./glass";
 export { Liquid, type LiquidHandle, type LiquidProps } from "./liquid";

@@ -46,23 +46,26 @@ Put glass on top of anything. Inside a `<Liquid>`, it reads the flowing wallpape
 under it and keeps its text legible as the currents pass.
 
 ```tsx
-import { Glass, Liquid } from "@myna/liquidglass";
+import { Glass, Ink, Liquid } from "@myna/liquidglass";
 import "@myna/liquidglass/styles.css";
 
 export function App() {
   return (
     <Liquid theme="light" style={{ height: "100vh" }}>
       <Glass as="section" style={{ width: 380, padding: 20 }}>
-        <h2 className="liquidglass-ink">Kyoto · 23°</h2>
-        <p className="liquidglass-sub">Partly cloudy, H:26° L:17°</p>
+        <Ink as="h2">Kyoto · 23°</Ink>
+        <Ink as="p" tone="secondary">
+          Partly cloudy, H:26° L:17°
+        </Ink>
       </Glass>
     </Liquid>
   );
 }
 ```
 
-`liquidglass-ink` and `liquidglass-sub` are the material's two ink strengths. They blend into
-the glass, so text takes on a little of the colour behind it.
+`<Ink>` is the material's ink, in two strengths: `tone="primary"` (the default) and
+`tone="secondary"`. It follows the glass around it, dark on light glass and light on
+dark glass, and blends in, so text takes on a little of the colour behind it.
 
 ## The material
 
@@ -87,6 +90,9 @@ All of it compiles down to four declarations. Use them on your own elements, too
   color: var(--glass-ink);
 }
 ```
+
+Outside React, inside an element styled this way, the classes `liquidglass-ink` and
+`liquidglass-sub` do what `<Ink>` and `<Ink tone="secondary">` do.
 
 ## How the rim bends
 
@@ -152,6 +158,16 @@ Renders a `div` by default; pass `as` for any other element, and its props come 
 | `ink`                              | `"auto"`             | `"dark"`, `"light"`, or chosen from the backdrop.                              |
 | `lens`                             | `"auto"`             | `"filter"`, `"canvas"`, `false`, or the best one this browser can run.         |
 | `onReading`                        |                      | `({ luminance, busyness, ink, tint }) => void`, each time the glass reads.     |
+
+### `<Ink>`
+
+Text or icons in the glass's ink. Renders a `span` by default; pass `as` for any other
+element, and its props come along.
+
+| Prop   | Default     | Description                                               |
+| ------ | ----------- | --------------------------------------------------------- |
+| `as`   | `"span"`    | Element or component to render.                           |
+| `tone` | `"primary"` | `"primary"` for text that leads, `"secondary"` beside it. |
 
 ### `<Liquid>`
 

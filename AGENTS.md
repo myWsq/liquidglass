@@ -6,7 +6,7 @@ What an agent needs to maintain liquidglass that the code does not say on its ow
 
 - `packages/liquidglass` is the published npm package `@myna/liquidglass`. `apps/pages` (`@myna/liquidglass-pages`, private) is the demo site and the acceptance surface.
 - The library ships **plain CSS** (`@myna/liquidglass/styles.css`) on purpose, not StyleX: a published component must not make its consumers adopt a styling system. StyleX and astryx are for `apps/pages` only. Never add them to the library.
-- The public styling contract is the four `--glass-*` tokens (`tint`, `blur`, `lens`, `edge`) plus `--glass-ink` / `--glass-ink-sub`, the classes `liquidglass`, `liquidglass-ink`, `liquidglass-sub`, and `data-ink`. `--lg-*` properties are internal inputs and may change.
+- The public styling contract is the four `--glass-*` tokens (`tint`, `blur`, `lens`, `edge`) plus `--glass-ink` / `--glass-ink-sub`, the classes `liquidglass`, `liquidglass-ink`, `liquidglass-sub`, and `data-ink`. `--lg-*` properties are internal inputs and may change. **React code (README, demo, code samples) uses `<Ink>` / `<Ink tone="secondary">`, never the ink classes**: the classes exist for markup outside React. The `"dark" | "light"` type is `InkColor`; `Ink` is the component.
 
 ## Decisions to keep
 

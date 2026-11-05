@@ -1,8 +1,7 @@
-import { Glass } from "@myna/liquidglass";
+import { Glass, Ink } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
 import { lensAtom, readingAtom, tintAtom } from "../state";
-import { withClass } from "../sx";
 
 /** Highest wash the slider offers, as a fraction. Auto tops out at 22%. */
 const MAX = 0.4;
@@ -36,7 +35,9 @@ export function TintPill({ visible }: { visible: boolean }) {
       rim={16}
       {...stylex.props(styles.pill, visible && styles.visible)}
     >
-      <span {...withClass("liquidglass-sub", styles.label)}>Tint</span>
+      <Ink tone="secondary" {...stylex.props(styles.label)}>
+        Tint
+      </Ink>
       <span {...stylex.props(styles.slot, !auto && styles.slotOpen)} aria-hidden={auto}>
         <input
           type="range"
@@ -50,7 +51,7 @@ export function TintPill({ visible }: { visible: boolean }) {
           {...stylex.props(styles.range)}
         />
       </span>
-      <span {...withClass("liquidglass-ink", styles.pct)}>{Math.round(value * 100)}%</span>
+      <Ink {...stylex.props(styles.pct)}>{Math.round(value * 100)}%</Ink>
       <button
         type="button"
         role="switch"
@@ -59,7 +60,9 @@ export function TintPill({ visible }: { visible: boolean }) {
         onClick={toggle}
         {...stylex.props(styles.switch)}
       >
-        <span {...withClass("liquidglass-sub", styles.switchLabel)}>Auto</span>
+        <Ink tone="secondary" {...stylex.props(styles.switchLabel)}>
+          Auto
+        </Ink>
         <span {...stylex.props(styles.track, auto && styles.trackOn)}>
           <span {...stylex.props(styles.thumb, auto && styles.thumbOn)} />
         </span>
