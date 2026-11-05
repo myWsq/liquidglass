@@ -142,9 +142,10 @@ export function Material() {
           </MetadataListItem>
         </MetadataList>
         <Hint>
-          Drag the card from a pale current into a deep one, or flip the wallpaper with the button
-          in the corner. The tint pill is Auto until you drag it, then fixed for this theme only.
-          The sun button, the pill and the card are all the same material.
+          Drag the card from a pale current into a deep one, or flip the wallpaper with the sun
+          button. Switch Auto off on the tint pill to set the wash by hand; it is kept apart for
+          light and dark glass. The layers button beside the sun pulls the card apart into its six
+          layers. The buttons, the pill and the card are all the same material.
         </Hint>
       </div>
     </>

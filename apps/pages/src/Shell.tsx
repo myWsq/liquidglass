@@ -1,54 +1,29 @@
-import { LinkProvider } from "@astryxdesign/core/Link";
-import { Tab, TabList } from "@astryxdesign/core/TabList";
 import * as stylex from "@stylexjs/stylex";
-import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, type AnchorHTMLAttributes } from "react";
-import { SECTIONS, type SectionPath } from "./router";
+import { Outlet } from "@tanstack/react-router";
 import { Stage } from "./stage/Stage";
 
-/** astryx renders links with `href`; TanStack Router navigates with `to`. */
-function RouterLink({ href, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }) {
-  return <Link to={href as SectionPath} {...rest} />;
-}
-
-export function useSection(): SectionPath {
-  const path = useRouterState({ select: (s) => s.location.pathname });
-  return SECTIONS.find((s) => s.path === path)?.path ?? "/";
-}
-
 export function Shell() {
-  const section = useSection();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
-      const i = SECTIONS.findIndex((s) => s.path === section);
-      const next = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : -1;
-      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
-      if (next < 0 || next >= SECTIONS.length) return;
-      void navigate({ to: SECTIONS[next].path });
-    };
-    addEventListener("keydown", onKey);
-    return () => removeEventListener("keydown", onKey);
-  }, [section, navigate]);
-
   return (
-    <LinkProvider component={RouterLink}>
-      <main {...stylex.props(styles.app)}>
-        <Stage section={section} />
-        <section {...stylex.props(styles.notes)}>
-          <TabList value={section} onChange={() => {}} size="sm" hasDivider>
-            {SECTIONS.map((s) => (
-              <Tab key={s.path} value={s.path} label={s.label} href={s.path} />
-            ))}
-          </TabList>
-          <div {...stylex.props(styles.panel)}>
-            <Outlet />
-          </div>
-        </section>
-      </main>
-    </LinkProvider>
+    <main {...stylex.props(styles.app)}>
+      <Stage />
+      <section {...stylex.props(styles.notes)}>
+        <header {...stylex.props(styles.header)}>
+          <span {...stylex.props(styles.name)}>@myna/liquidglass</span>
+          <nav {...stylex.props(styles.links)}>
+            <a href="https://github.com/myWsq/liquidglass" {...stylex.props(styles.link)}>
+              GitHub
+            </a>
+            <a
+              href="https://www.npmjs.com/package/@myna/liquidglass"
+              {...stylex.props(styles.link)}
+            >
+              npm
+            </a>
+          </nav>
+        </header>
+        <Outlet />
+      </section>
+    </main>
   );
 }
 
@@ -70,7 +45,24 @@ const styles = stylex.create({
     borderTop: { default: "1px solid #1a1b1f", [WIDE]: "none" },
     borderLeft: { default: "none", [WIDE]: "1px solid #1a1b1f" },
   },
-  panel: {
-    paddingTop: 26,
+  header: {
+    display: "flex",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    paddingBottom: 18,
+    marginBottom: 26,
+    borderBottom: "1px solid #1a1b1f",
+  },
+  name: {
+    fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
+    fontSize: 13,
+    color: "#e9e9ea",
+  },
+  links: { display: "flex", gap: 18 },
+  link: {
+    fontSize: 13,
+    color: { default: "#8b8e95", ":hover": "#f2f2f3" },
+    textDecoration: "none",
+    transition: "color .2s",
   },
 });

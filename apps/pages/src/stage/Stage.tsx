@@ -1,26 +1,34 @@
 import { Liquid, type LiquidHandle } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
-import { useSearch } from "@tanstack/react-router";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
-import type { SectionPath } from "../router";
-import { themeAtom } from "../state";
+import { cardAtom, explodedAtom, themeAtom } from "../state";
+import { ExplodeButton } from "./ExplodeButton";
 import { LayerStack } from "./LayerStack";
-import { WeatherCard } from "./WeatherCard";
 import { ThemeButton } from "./ThemeButton";
 import { TintPill } from "./TintPill";
+import { WeatherCard } from "./WeatherCard";
 
-export function Stage({ section }: { section: SectionPath }) {
+export function Stage() {
   const theme = useAtomValue(themeAtom);
+  const [exploded, setExploded] = useAtom(explodedAtom);
+  const setCard = useSetAtom(cardAtom);
   const liquid = useRef<LiquidHandle>(null);
-  const { layer } = useSearch({ strict: false });
-  const exploded = section === "/layers";
-  // After leaving the layers page the stack keeps the stage until it lands on the card.
+  // After the layers go back together the stack keeps the stage until it has landed.
   const [returning, setReturning] = useState(false);
   useEffect(() => {
     if (exploded) setReturning(true);
   }, [exploded]);
   const stackShown = exploded || returning;
+
+  useEffect(() => {
+    if (!exploded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExploded(false);
+    };
+    addEventListener("keydown", onKey);
+    return () => removeEventListener("keydown", onKey);
+  }, [exploded, setExploded]);
 
   return (
     <Liquid
@@ -32,13 +40,16 @@ export function Stage({ section }: { section: SectionPath }) {
       <LayerStack
         open={exploded}
         shown={stackShown}
-        layer={layer ?? "shadow"}
         liquid={liquid}
-        onLanded={() => setReturning(false)}
+        onLanded={(at) => {
+          setCard(at);
+          setReturning(false);
+        }}
       />
       <WeatherCard hidden={stackShown} />
+      <ExplodeButton />
       <ThemeButton />
-      <TintPill visible={section === "/"} />
+      <TintPill visible={!stackShown} />
     </Liquid>
   );
 }

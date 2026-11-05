@@ -6,20 +6,26 @@ import { withClass } from "../sx";
 
 /** Highest wash the slider offers, as a fraction. Auto tops out at 22%. */
 const MAX = 0.4;
+const ease = "cubic-bezier(.2,.8,.2,1)";
 
 /**
  * The wash for the glass the card is showing right now (light glass under dark ink,
- * or dark glass under light ink). On Auto the knob follows the live value; dragging
- * fixes it for this appearance only, and Auto hands it back to the wallpaper.
+ * or dark glass under light ink). With Auto on there is nothing to drag: the pill just
+ * shows the live value. Turning Auto off slides a slider in, starting from that value;
+ * the setting is kept apart for light and dark glass.
  */
 export function TintPill({ visible }: { visible: boolean }) {
   const lens = useAtomValue(lensAtom);
   const [tint, setTint] = useAtom(tintAtom);
   const reading = useAtomValue(readingAtom);
   const appearance = reading?.ink === "light" ? "dark" : "light";
-  const auto = tint[appearance] === "auto";
+  const setting = tint[appearance];
+  const auto = setting === "auto";
   const live = reading?.tint ?? 0.12;
-  const shown = auto ? live : (tint[appearance] as number);
+  const value = auto ? live : setting;
+  const toggle = () =>
+    setTint({ ...tint, [appearance]: auto ? Math.round(live * 100) / 100 : "auto" });
+
   return (
     <Glass
       lens={lens}
@@ -31,26 +37,32 @@ export function TintPill({ visible }: { visible: boolean }) {
       {...stylex.props(styles.pill, visible && styles.visible)}
     >
       <span {...withClass("liquidglass-sub", styles.label)}>Tint</span>
-      <input
-        type="range"
-        min={0}
-        max={MAX * 100}
-        value={Math.round(shown * 100)}
-        aria-label={`Tint strength for ${appearance} glass`}
-        aria-valuetext={auto ? `Auto, ${Math.round(live * 100)}%` : `${Math.round(shown * 100)}%`}
-        onChange={(e) => setTint({ ...tint, [appearance]: Number(e.target.value) / 100 })}
-        tabIndex={visible ? 0 : -1}
-        {...stylex.props(styles.range)}
-      />
-      <span {...withClass("liquidglass-ink", styles.pct)}>{Math.round(shown * 100)}%</span>
+      <span {...stylex.props(styles.slot, !auto && styles.slotOpen)} aria-hidden={auto}>
+        <input
+          type="range"
+          min={0}
+          max={MAX * 100}
+          value={Math.round(value * 100)}
+          aria-label={`Tint strength for ${appearance} glass`}
+          disabled={auto}
+          tabIndex={visible && !auto ? 0 : -1}
+          onChange={(e) => setTint({ ...tint, [appearance]: Number(e.target.value) / 100 })}
+          {...stylex.props(styles.range)}
+        />
+      </span>
+      <span {...withClass("liquidglass-ink", styles.pct)}>{Math.round(value * 100)}%</span>
       <button
         type="button"
-        aria-pressed={auto}
+        role="switch"
+        aria-checked={auto}
         tabIndex={visible ? 0 : -1}
-        onClick={() => setTint({ ...tint, [appearance]: "auto" })}
-        {...withClass("liquidglass-ink", styles.auto, auto && styles.autoOn)}
+        onClick={toggle}
+        {...stylex.props(styles.switch)}
       >
-        Auto
+        <span {...withClass("liquidglass-sub", styles.switchLabel)}>Auto</span>
+        <span {...stylex.props(styles.track, auto && styles.trackOn)}>
+          <span {...stylex.props(styles.thumb, auto && styles.thumbOn)} />
+        </span>
       </button>
     </Glass>
   );
@@ -61,15 +73,15 @@ const styles = stylex.create({
     position: "absolute",
     left: "50%",
     bottom: 22,
-    width: 330,
     height: 44,
     display: "flex",
     alignItems: "center",
     gap: 12,
-    paddingInline: "16px 6px",
+    paddingInline: "16px 8px",
     fontSize: 13,
     fontWeight: 500,
     zIndex: 2,
+    whiteSpace: "nowrap",
     opacity: 0,
     pointerEvents: "none",
     transform: "translate(-50%, 10px)",
@@ -78,27 +90,26 @@ const styles = stylex.create({
   },
   visible: { opacity: 1, pointerEvents: "auto", transform: "translate(-50%, 0)" },
   label: {},
-  pct: { width: 34, textAlign: "right", fontVariantNumeric: "tabular-nums" },
-  auto: {
-    height: 32,
-    paddingInline: 12,
-    border: "none",
-    borderRadius: 16,
-    font: "inherit",
-    cursor: "pointer",
-    backgroundColor: "transparent",
-    boxShadow: "inset 0 0 0 1px color-mix(in srgb, var(--glass-ink) 28%, transparent)",
-    opacity: { default: 0.7, ":hover": 1 },
-    transition: "background-color .2s, opacity .2s, box-shadow .2s",
+  // The slider folds away with Auto on; the pill narrows around it.
+  slot: {
+    display: "flex",
+    alignItems: "center",
+    width: 0,
+    marginInline: -6,
+    overflow: "hidden",
+    opacity: 0,
+    transition: `width .45s ${ease}, margin .45s ${ease}, opacity .25s ease`,
   },
-  autoOn: {
+  slotOpen: {
+    width: 150,
+    marginInline: 0,
     opacity: 1,
-    backgroundColor: "color-mix(in srgb, var(--glass-ink) 14%, transparent)",
-    boxShadow: "none",
+    transition: `width .45s ${ease}, margin .45s ${ease}, opacity .3s ease .12s`,
   },
+  pct: { minWidth: 34, textAlign: "right", fontVariantNumeric: "tabular-nums" },
   range: {
-    flex: 1,
-    minWidth: 0,
+    width: 150,
+    flexShrink: 0,
     height: 18,
     margin: 0,
     cursor: "pointer",
@@ -132,4 +143,44 @@ const styles = stylex.create({
       boxShadow: "0 1px 4px rgb(0 0 0 / .3)",
     },
   },
+  switch: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    height: 32,
+    paddingInline: 8,
+    border: "none",
+    borderRadius: 16,
+    font: "inherit",
+    cursor: "pointer",
+    color: "inherit",
+    backgroundColor: {
+      default: "transparent",
+      ":hover": "color-mix(in srgb, var(--glass-ink) 8%, transparent)",
+    },
+    transition: "background-color .2s",
+  },
+  switchLabel: {},
+  track: {
+    position: "relative",
+    width: 34,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "color-mix(in srgb, var(--glass-ink) 22%, transparent)",
+    transition: "background-color .3s ease",
+  },
+  trackOn: { backgroundColor: "#0a84ff" },
+  thumb: {
+    position: "absolute",
+    top: 2,
+    left: 2,
+    width: 16,
+    height: 16,
+    borderRadius: "50%",
+    backgroundColor: "#fff",
+    boxShadow: "0 1px 3px rgb(0 0 0 / .3)",
+    transform: "translateX(0)",
+    transition: `transform .35s ${ease}`,
+  },
+  thumbOn: { transform: "translateX(14px)" },
 });

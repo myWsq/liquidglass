@@ -22,7 +22,7 @@ export function WeatherCard({ hidden }: { hidden: boolean }) {
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Start a little above centre; stay inside the stage when it resizes.
+  // Start in the middle (where the layers put it back, too); stay inside the stage.
   useLayoutEffect(() => {
     const el = node.current;
     const stage = el?.offsetParent as HTMLElement | null;
@@ -33,7 +33,7 @@ export function WeatherCard({ hidden }: { hidden: boolean }) {
         const H = stage.clientHeight;
         const w = el.offsetWidth;
         const h = el.offsetHeight;
-        const at = p ?? { x: (W - w) / 2, y: Math.max(56, H * 0.2) };
+        const at = p ?? { x: (W - w) / 2, y: (H - h) / 2 };
         return {
           x: clamp(at.x, 8, Math.max(8, W - w - 8)),
           y: clamp(at.y, 8, Math.max(8, H - h - 8)),

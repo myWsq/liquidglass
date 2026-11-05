@@ -21,3 +21,6 @@ export const cardAtom = atom<{ x: number; y: number } | null>(null);
 
 /** The card's °C/°F choice, shared so the stack's copy of the card shows the same. */
 export const unitAtom = atom<"c" | "f">("c");
+
+/** The card pulled apart into its six layers (the toggle in the stage's top-right corner). */
+export const explodedAtom = atom(false);

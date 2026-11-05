@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import { useId } from "react";
 import { withClass } from "../sx";
 
 export type Unit = "c" | "f";
@@ -79,6 +80,7 @@ function PinIcon() {
 
 /** Line icons in the ink colour; the sun's disc is filled so it reads at small sizes. */
 function SkyIcon({ sky, size }: { sky: Sky; size: number }) {
+  const behind = `sky-${useId().replace(/[^\w-]/g, "")}`;
   const sun = (cx: number, cy: number, r: number) => (
     <g>
       <circle cx={cx} cy={cy} r={r} fill="currentColor" stroke="none" />
@@ -96,9 +98,9 @@ function SkyIcon({ sky, size }: { sky: Sky; size: number }) {
       })}
     </g>
   );
-  const cloud = (
-    <path d="M7.5 19h9.25a4.25 4.25 0 0 0 .54-8.47A5.75 5.75 0 0 0 6.2 11.6 3.75 3.75 0 0 0 7.5 19z" />
-  );
+  const CLOUD =
+    "M7.5 19h9.25a4.25 4.25 0 0 0 .54-8.47A5.75 5.75 0 0 0 6.2 11.6 3.75 3.75 0 0 0 7.5 19z";
+  const cloud = <path d={CLOUD} />;
   return (
     <svg
       width={size}
@@ -115,7 +117,14 @@ function SkyIcon({ sky, size }: { sky: Sky; size: number }) {
       {sky === "sun" && sun(12, 12, 4)}
       {sky === "partly" && (
         <>
-          <g transform="translate(-3 -3) scale(.8)">{sun(12, 12, 4)}</g>
+          {/* The cloud hides the part of the sun behind it, with a small gap around it. */}
+          <mask id={behind} maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+            <rect width="24" height="24" fill="#fff" stroke="none" />
+            <path d={CLOUD} fill="#000" stroke="#000" strokeWidth="3.6" />
+          </mask>
+          <g mask={`url(#${behind})`}>
+            <g transform="translate(-3 -3) scale(.8)">{sun(12, 12, 4)}</g>
+          </g>
           <g fill="currentColor" fillOpacity=".18">
             {cloud}
           </g>

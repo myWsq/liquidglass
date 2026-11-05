@@ -196,10 +196,10 @@ Without WebGL2, `<Liquid>` renders one still frame of the same liquid on the CPU
 
 ## The demo
 
-[The demo](https://mywsq.github.io/liquidglass/) is `apps/pages`. **Material** shows the
-four declarations and the card's live light/dark reading, with a switch between the
-filter and canvas lens. **Layers** flies the card to the middle and pulls its six layers
-apart in 3D, then puts it back where you left it.
+[The demo](https://mywsq.github.io/liquidglass/) is `apps/pages`: a glass weather widget
+on the liquid. Beside it, the card as `<Glass>` code with its live props, the tokens
+underneath, and the light/dark reading. The layers button in the corner pulls the card
+apart into its six layers, each labelled where it sits.
 
 ```sh
 pnpm install
