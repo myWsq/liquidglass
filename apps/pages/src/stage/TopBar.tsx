@@ -1,63 +1,51 @@
-import { Glass } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue } from "jotai";
 import { GitHubIcon, REPO } from "../GitHubIcon";
-import { lensAtom, tintAtom } from "../state";
-import { withClass } from "../sx";
 
 /**
- * On the stacked layout the stage opens the page, so it carries the name: a glass bar
- * in line with the layers and sun buttons, made of the same material.
+ * On the stacked layout the stage opens the page, so it carries the name: plain text in
+ * line with the layers and sun buttons. White with a soft shadow, like the layer labels,
+ * so it reads on any wallpaper without being another piece of glass.
  */
 export function TopBar() {
-  const lens = useAtomValue(lensAtom);
-  const tint = useAtomValue(tintAtom);
   return (
-    <Glass
-      as="header"
-      lens={lens === "off" ? false : lens}
-      tint={tint}
-      radius="pill"
-      rim={14}
-      {...stylex.props(styles.bar)}
-    >
-      <span {...withClass("liquidglass-ink", styles.name)}>@myna/liquidglass</span>
-      <a href={REPO} aria-label="GitHub" {...withClass("liquidglass-ink", styles.link)}>
+    <header {...stylex.props(styles.bar)}>
+      <span {...stylex.props(styles.name)}>@myna/liquidglass</span>
+      <a href={REPO} aria-label="GitHub" {...stylex.props(styles.link)}>
         <GitHubIcon size={18} />
       </a>
-    </Glass>
+    </header>
   );
 }
+
+const shadow = "0 0 10px rgb(0 10 40 / .45), 0 0 2px rgb(0 10 40 / .4)";
 
 const styles = stylex.create({
   bar: {
     position: "absolute",
     top: 16,
-    left: 16,
+    left: 20,
     right: 112,
     height: 40,
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingInline: "16px 4px",
+    gap: 10,
     zIndex: 2,
+    color: "#fff",
   },
   name: {
     fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 600,
     letterSpacing: "-0.01em",
     whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
+    textShadow: shadow,
   },
   link: {
-    width: 32,
-    height: 32,
-    flexShrink: 0,
     display: "grid",
     placeItems: "center",
-    borderRadius: 16,
+    flexShrink: 0,
     color: "inherit",
+    filter: "drop-shadow(0 0 3px rgb(0 10 40 / .45))",
+    opacity: { default: 0.9, ":hover": 1 },
   },
 });
