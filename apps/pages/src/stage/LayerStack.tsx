@@ -19,7 +19,7 @@ interface Props {
 }
 
 /** One trip, out or back, in ms. */
-const TRIP = 1100;
+const TRIP = 950;
 /** How far apart the layers end up, px. */
 const GAP = 60;
 /** Opacity of the other layers while you point at one label. */
@@ -36,10 +36,10 @@ const SPACING = 64;
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
-/** The part of the trip between `a` and `b`, eased. */
+/** The part of the trip between `a` and `b`, eased (in-out sine: it gets going at once). */
 const phase = (p: number, a: number, b: number) => {
   const k = clamp01((p - a) / (b - a));
-  return k < 0.5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;
+  return (1 - Math.cos(Math.PI * k)) / 2;
 };
 
 /**
@@ -80,10 +80,6 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
     let last = performance.now();
     let landed = false;
     let home: Point | null = null;
-    // Plain-text labels read the wallpaper behind them (a few times a second) and pick
-    // dark or light text; the thresholds are apart so a label never flickers.
-    const tone: ("dark" | "light")[] = LAYERS.map(() => "light");
-    let sinceTone = Infinity;
 
     const apply = (dt: number) => {
       const node = root.current;
@@ -106,6 +102,11 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
           : Math.max(target, progress.current - step));
       if (!open && p === 0 && !landed) {
         landed = true;
+        const wall = liquid.current?.canvas;
+        if (wall) {
+          wall.style.filter = "";
+          wall.style.transform = "";
+        }
         onLanded(middle);
         return;
       }
@@ -121,10 +122,20 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
       // Make room for the labels on both sides, and shrink the stack if the stage is narrow.
       const room = W >= WIDE ? LABELS.wide : LABELS.narrow;
       const scale = clamp((W - 2 * room - 16) / 440, 0.5, 0.96);
-      const glide = phase(p, 0, 0.7);
-      const tilt = phase(p, 0.15, 0.9);
-      const apart = phase(p, 0.4, 1);
-      const show = phase(p, 0.75, 1);
+      // Everything starts on the first frame and overlaps: glide and tilt together, the
+      // layers part from a quarter in, the labels draw in at the end.
+      const glide = phase(p, 0, 0.6);
+      const tilt = phase(p, 0, 0.75);
+      const apart = phase(p, 0.25, 1);
+      const show = phase(p, 0.7, 1);
+
+      // The wallpaper dims and blurs on the same timeline, not on a transition of its
+      // own, so the card never sits still while the stage changes around it.
+      const wall = liquid.current?.canvas;
+      if (wall) {
+        wall.style.filter = `blur(${(14 * tilt).toFixed(2)}px) saturate(${(1 - 0.15 * tilt).toFixed(3)}) brightness(${(1 - 0.38 * tilt).toFixed(3)})`;
+        wall.style.transform = `scale(${(1 + 0.08 * tilt).toFixed(4)})`;
+      }
       const x = lerp(home.x, middle.x, glide);
       const y = lerp(home.y, middle.y, glide);
 
@@ -138,6 +149,8 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
         const want = focus ? (LAYERS[i].key === focus ? 1 : DIM) : 1;
         shade.current[i] += (want - shade.current[i]) * k;
         el.style.opacity = shade.current[i].toFixed(3);
+        // The layers themselves answer to hover once they are apart, like their labels.
+        el.style.pointerEvents = show > 0.9 ? "auto" : "none";
         el.style.transform = `translateZ(${(i - 2.5) * GAP * apart}px)`;
       });
 
@@ -162,7 +175,7 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
         ink.style.setProperty("--lg-ink-blend", lightInk ? "screen" : "multiply");
       }
 
-      placeLabels(stage, W, H, show, focus, dt);
+      placeLabels(stage, W, H, show, focus);
       paintBackdrop(liquid.current, x, y, w, h, [
         panes.current[1] as HTMLCanvasElement | null,
         panes.current[2] as HTMLCanvasElement | null,
@@ -176,15 +189,19 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
       H: number,
       show: number,
       focus: LayerKey | null,
-      dt: number,
     ) => {
       const box = stage.getBoundingClientRect();
-      sinceTone += dt;
-      const retone = show > 0 && sinceTone > 200;
-      if (retone) sinceTone = 0;
-      const at = anchors.current.map((a) => {
-        const r = a?.getBoundingClientRect();
-        return r ? { x: r.left - box.left, y: r.top - box.top } : { x: 0, y: 0 };
+      // Each line meets its layer near the corner that sticks out furthest toward its
+      // label (inset a little, so the dot sits on the layer). One corner per layer
+      // stands clear of the stack, which makes it plain which layer a line belongs to.
+      const at = LAYERS.map((_, i) => {
+        const corners = [0, 1, 2, 3].flatMap((c) => {
+          const r = anchors.current[i * 4 + c]?.getBoundingClientRect();
+          return r ? [{ x: r.left - box.left, y: r.top - box.top }] : [];
+        });
+        if (!corners.length) return { x: 0, y: 0 };
+        const right = side(i) === "right";
+        return corners.reduce((a, b) => ((right ? b.x > a.x : b.x < a.x) ? b : a));
       });
       const width = labels.current.map((l) => l?.offsetWidth ?? 0);
       const height = labels.current.map((l) => l?.offsetHeight ?? 0);
@@ -216,19 +233,6 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
         const label = labels.current[i];
         const lead = leaders.current[i];
         const dim = focus && focus !== l.key ? 0.45 : 1;
-        if (label && retone) {
-          const r = liquid.current?.sample(label.getBoundingClientRect());
-          if (r) {
-            if (tone[i] === "light" && r.luminance > 0.58) tone[i] = "dark";
-            else if (tone[i] === "dark" && r.luminance < 0.5) tone[i] = "light";
-          }
-          const dark = tone[i] === "dark";
-          label.style.color = dark ? "rgb(10 14 30 / 88%)" : "rgb(255 255 255 / 96%)";
-          label.style.textShadow = dark
-            ? "0 0 8px rgb(255 255 255 / .7), 0 0 2px rgb(255 255 255 / .6)"
-            : "0 0 8px rgb(0 10 40 / .55), 0 0 2px rgb(0 10 40 / .5)";
-          if (lead) lead.style.color = label.style.color;
-        }
         if (label) {
           const caption = label.lastElementChild as HTMLElement | null;
           if (caption) caption.style.display = W >= WIDE ? "" : "none";
@@ -258,7 +262,14 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
     };
     apply(0);
     raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      const wall = liquid.current?.canvas;
+      if (wall) {
+        wall.style.filter = "";
+        wall.style.transform = "";
+      }
+    };
   }, [shown, liquid]);
 
   const ref =
@@ -266,34 +277,37 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
     (el: T | null) => {
       list.current[i] = el;
     };
-  const anchor = (i: number) => (
-    <span
-      ref={ref(anchors, i)}
-      {...stylex.props(styles.anchor, side(i) === "right" ? styles.anchorRight : styles.anchorLeft)}
-    />
-  );
+  const corners = [styles.tl, styles.tr, styles.br, styles.bl];
+  const anchor = (i: number) =>
+    corners.map((corner, c) => (
+      <span key={c} ref={ref(anchors, i * 4 + c)} {...stylex.props(styles.anchor, corner)} />
+    ));
+  const hover = (i: number) => ({
+    onPointerEnter: () => setFocus(LAYERS[i].key),
+    onPointerLeave: () => setFocus(null),
+  });
 
   return (
     <>
       <div ref={root} aria-hidden="true" {...stylex.props(styles.stack, !shown && styles.off)}>
-        <div ref={ref(panes, 0)} {...stylex.props(styles.pane, styles.shadow)}>
+        <div ref={ref(panes, 0)} {...hover(0)} {...stylex.props(styles.pane, styles.shadow)}>
           {anchor(0)}
         </div>
-        <div ref={ref(panes, 1)} {...stylex.props(styles.pane)}>
+        <div ref={ref(panes, 1)} {...hover(1)} {...stylex.props(styles.pane)}>
           <canvas {...stylex.props(styles.fill)} />
           {anchor(1)}
         </div>
-        <div ref={ref(panes, 2)} {...stylex.props(styles.pane)}>
+        <div ref={ref(panes, 2)} {...hover(2)} {...stylex.props(styles.pane)}>
           <canvas {...stylex.props(styles.fill)} />
           {anchor(2)}
         </div>
-        <div ref={ref(panes, 3)} {...stylex.props(styles.pane, styles.tint)}>
+        <div ref={ref(panes, 3)} {...hover(3)} {...stylex.props(styles.pane, styles.tint)}>
           {anchor(3)}
         </div>
-        <div ref={ref(panes, 4)} {...stylex.props(styles.pane, styles.rim)}>
+        <div ref={ref(panes, 4)} {...hover(4)} {...stylex.props(styles.pane, styles.rim)}>
           {anchor(4)}
         </div>
-        <div ref={ref(panes, 5)} {...stylex.props(styles.pane, styles.ink)}>
+        <div ref={ref(panes, 5)} {...hover(5)} {...stylex.props(styles.pane, styles.ink)}>
           <WeatherFace unit={unit} />
           {anchor(5)}
         </div>
@@ -385,11 +399,13 @@ const styles = stylex.create({
     borderRadius: 28,
   },
   fill: { display: "block", width: "100%", height: "100%", borderRadius: 28 },
-  // The point on each layer its leader line starts from: the middle of the edge on its
-  // label's side.
-  anchor: { position: "absolute", top: "50%", width: 1, height: 1 },
-  anchorRight: { right: 0 },
-  anchorLeft: { left: 0 },
+  // Candidate points for a layer's leader line: its four corners, inset onto the surface
+  // (past the rounding).
+  anchor: { position: "absolute", width: 1, height: 1, pointerEvents: "none" },
+  tl: { left: 22, top: 22 },
+  tr: { right: 22, top: 22 },
+  br: { right: 22, bottom: 22 },
+  bl: { left: 22, bottom: 22 },
   shadow: {
     boxShadow: "0 0 0 .5px rgb(0 0 0 / .06), 0 6px 24px rgb(0 0 0 / .08)",
   },
@@ -410,12 +426,11 @@ const styles = stylex.create({
   },
   overlay: { position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none" },
   leaders: { position: "absolute", inset: 0, width: "100%", height: "100%", overflow: "visible" },
-  // Lines and dots take the colour of their label.
   leader: {
-    color: "rgb(255 255 255 / 96%)",
-    stroke: "currentColor",
+    stroke: "rgb(255 255 255 / 92%)",
     strokeWidth: 1,
-    fill: "currentColor",
+    fill: "#fff",
+    filter: "drop-shadow(0 0 2px rgb(0 10 40 / .45))",
     opacity: 0,
   },
   list: { listStyle: "none", margin: 0, padding: 0 },
@@ -433,12 +448,13 @@ const styles = stylex.create({
     borderRadius: 4,
     font: "inherit",
     whiteSpace: "nowrap",
-    color: "rgb(255 255 255 / 96%)",
+    // One colour on every wallpaper: the stage dims behind the layers, so white reads.
+    color: "#fff",
+    textShadow: "0 0 10px rgb(0 10 40 / .45), 0 0 2px rgb(0 10 40 / .4)",
     backgroundColor: "transparent",
     cursor: "default",
     opacity: 0,
     pointerEvents: "none",
-    transition: "color .3s ease, text-shadow .3s ease",
     outline: { default: "none", ":focus-visible": "1px solid currentColor" },
   },
   labelLeft: { alignItems: "flex-end", textAlign: "right" },

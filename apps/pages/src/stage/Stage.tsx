@@ -31,12 +31,7 @@ export function Stage() {
   }, [exploded, setExploded]);
 
   return (
-    <Liquid
-      ref={liquid}
-      theme={theme}
-      canvasProps={stylex.props(styles.wall, exploded && styles.wallBehind)}
-      {...stylex.props(styles.stage)}
-    >
+    <Liquid ref={liquid} theme={theme} {...stylex.props(styles.stage)}>
       <LayerStack
         open={exploded}
         shown={stackShown}
@@ -58,12 +53,5 @@ const styles = stylex.create({
   stage: {
     minHeight: 440,
     perspective: "1500px",
-  },
-  wall: {
-    transition: "filter .9s ease, transform .9s ease",
-  },
-  wallBehind: {
-    filter: "blur(14px) saturate(.85) brightness(.9)",
-    transform: "scale(1.08)",
   },
 });
