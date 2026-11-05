@@ -1,23 +1,49 @@
 import { Banner } from "@astryxdesign/core/Banner";
 import { MetadataList, MetadataListItem } from "@astryxdesign/core/MetadataList";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
-import { supportsLens } from "@myna/liquidglass";
+import { supportsLens, type Tint } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
-import { lensAtom, readingAtom, tintScaleAtom } from "../state";
+import { lensAtom, readingAtom, themeAtom, tintAtom } from "../state";
 import { Code, Eyebrow, Hint, Lead, Mono } from "./parts";
 
-const FOUR = `.player {
+const TOKENS = `.my-card {
   background: var(--glass-tint);
-  backdrop-filter: var(--glass-blur) var(--glass-lens);
+  backdrop-filter:
+    var(--glass-blur) var(--glass-lens);
   box-shadow: var(--glass-edge);
   color: var(--glass-ink);
 }`;
 
+const tintCode = (t: Tint) => (t === "auto" ? '"auto"' : String(t));
+
+/** The card on the stage, as you'd write it, with the props it has right now. */
+function cardCode(theme: string, lens: string, tint: { light: Tint; dark: Tint }) {
+  const props: string[] = [];
+  if (tint.light !== "auto" || tint.dark !== "auto")
+    props.push(`tint={{ light: ${tintCode(tint.light)}, dark: ${tintCode(tint.dark)} }}`);
+  if (lens !== "auto") props.push(`lens="${lens}"`);
+  const open = props.length
+    ? `<Glass\n    as="section"\n    ${props.join("\n    ")}\n  >`
+    : `<Glass as="section">`;
+  return `import { Glass, Liquid } from "@myna/liquidglass";
+import "@myna/liquidglass/styles.css";
+
+<Liquid theme="${theme}">
+  ${open}
+    <h3 className="liquidglass-ink">Kyoto</h3>
+    <p className="liquidglass-ink">23°</p>
+    <p className="liquidglass-sub">H:26° L:17°</p>
+    {/* … */}
+  </Glass>
+</Liquid>`;
+}
+
 /** The four declarations, and how the card reads the wallpaper to fill them in. */
 export function Material() {
   const r = useAtomValue(readingAtom);
-  const scale = useAtomValue(tintScaleAtom);
+  const tintSetting = useAtomValue(tintAtom);
+  const theme = useAtomValue(themeAtom);
   const [lens, setLens] = useAtom(lensAtom);
   const light = r?.ink === "light";
   const appearance = light ? "dark" : "light";
@@ -26,11 +52,47 @@ export function Material() {
   const running = lens === "auto" ? (filterOk ? "filter" : "canvas") : lens;
   return (
     <>
-      <Eyebrow>Four declarations</Eyebrow>
+      <Eyebrow>The component</Eyebrow>
       <Lead>
-        Any component turns to glass by trading four declarations for the material’s tokens.
+        Wrap any element in <code>&lt;Glass&gt;</code> and it becomes the material. Inside{" "}
+        <code>&lt;Liquid&gt;</code> it reads the wallpaper to pick its ink and wash.
       </Lead>
-      <Code code={FOUR} />
+      <Code code={cardCode(theme, lens, tintSetting)} language="tsx" />
+      <div {...stylex.props(styles.switch)}>
+        <Mono dim>rim lens</Mono>
+        <SegmentedControl
+          label="How the rim lens runs"
+          size="sm"
+          value={lens}
+          onChange={(v) => setLens(v as typeof lens)}
+        >
+          <SegmentedControlItem value="auto" label="Auto" />
+          <SegmentedControlItem value="filter" label="SVG filter" isDisabled={!filterOk} />
+          <SegmentedControlItem value="canvas" label="Canvas" />
+        </SegmentedControl>
+      </div>
+      <Hint>
+        This is the card on the stage: change the lens or the tint and its props follow. The SVG
+        filter is Chromium’s; the canvas copies the liquid under the glass and bends it on the CPU,
+        which every browser can do.
+      </Hint>
+      {filterOk ? null : (
+        <div {...stylex.props(styles.banner)}>
+          <Banner
+            status="info"
+            title="Canvas lens"
+            description="This browser can't run SVG filters inside backdrop-filter, so the glass refracts the liquid in a canvas instead. Glass over ordinary page content falls back to blur."
+          />
+        </div>
+      )}
+
+      <div {...stylex.props(styles.section)}>
+        <Eyebrow>Under the hood</Eyebrow>
+        <Lead>
+          <code>&lt;Glass&gt;</code> fills four tokens. Any element can use them, React or not.
+        </Lead>
+        <Code code={TOKENS} />
+      </div>
       <div {...stylex.props(styles.block)}>
         <MetadataList label={{ position: "start", width: 120 }}>
           <MetadataListItem label="--glass-tint">
@@ -54,32 +116,6 @@ export function Material() {
           </MetadataListItem>
         </MetadataList>
       </div>
-      <div {...stylex.props(styles.switch)}>
-        <Mono dim>rim lens</Mono>
-        <SegmentedControl
-          label="How the rim lens runs"
-          size="sm"
-          value={lens}
-          onChange={(v) => setLens(v as typeof lens)}
-        >
-          <SegmentedControlItem value="auto" label="Auto" />
-          <SegmentedControlItem value="filter" label="SVG filter" isDisabled={!filterOk} />
-          <SegmentedControlItem value="canvas" label="Canvas" />
-        </SegmentedControl>
-      </div>
-      <Hint>
-        The filter is Chromium’s; the canvas copies the liquid under the glass and bends it on the
-        CPU, which every browser can do.
-      </Hint>
-      {filterOk ? null : (
-        <div {...stylex.props(styles.banner)}>
-          <Banner
-            status="info"
-            title="Canvas lens"
-            description="This browser can't run SVG filters inside backdrop-filter, so the glass refracts the liquid in a canvas instead. Glass over ordinary page content falls back to blur."
-          />
-        </div>
-      )}
 
       <div {...stylex.props(styles.section)}>
         <Eyebrow>Light &amp; dark</Eyebrow>
@@ -96,8 +132,8 @@ export function Material() {
             <Mono>{r?.ink ?? "dark"}</Mono> <Mono dim>light below 0.5</Mono>
           </MetadataListItem>
           <MetadataListItem label="tint">
-            <Mono dim={appearance !== "light"}>light ×{scale.light.toFixed(2)}</Mono> ·{" "}
-            <Mono dim={appearance !== "dark"}>dark ×{scale.dark.toFixed(2)}</Mono>{" "}
+            <Mono dim={appearance !== "light"}>light {pctOrAuto(tintSetting.light)}</Mono> ·{" "}
+            <Mono dim={appearance !== "dark"}>dark {pctOrAuto(tintSetting.dark)}</Mono>{" "}
             <Mono dim>set per theme</Mono>
           </MetadataListItem>
           <MetadataListItem label="wash">
@@ -107,13 +143,15 @@ export function Material() {
         </MetadataList>
         <Hint>
           Drag the card from a pale current into a deep one, or flip the wallpaper with the button
-          in the corner. The tint pill edits only the current theme’s multiplier. The sun button,
-          the pill and the card are all the same material.
+          in the corner. The tint pill is Auto until you drag it, then fixed for this theme only.
+          The sun button, the pill and the card are all the same material.
         </Hint>
       </div>
     </>
   );
 }
+
+const pctOrAuto = (t: Tint) => (t === "auto" ? "auto" : `${Math.round(t * 100)}%`);
 
 const styles = stylex.create({
   block: { marginTop: 24 },

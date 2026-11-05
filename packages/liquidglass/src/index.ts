@@ -1,4 +1,11 @@
-export { Glass, type GlassOwnProps, type GlassProps, type GlassReading, type Ink } from "./glass";
+export {
+  Glass,
+  type GlassOwnProps,
+  type GlassProps,
+  type GlassReading,
+  type Ink,
+  type Tint,
+} from "./glass";
 export { Liquid, type LiquidHandle, type LiquidProps } from "./liquid";
 export { LIQUID_COLORS, type LiquidColors } from "./liquid-engine";
 export {

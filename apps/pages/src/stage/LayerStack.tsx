@@ -3,8 +3,8 @@ import * as stylex from "@stylexjs/stylex";
 import { useAtomValue } from "jotai";
 import { useEffectEvent, useLayoutEffect, useRef, type RefObject } from "react";
 import { LAYERS, type LayerKey } from "../layers";
-import { DURATION, cardAtom, playbackAtom, readingAtom } from "../state";
-import { PlayerFace } from "./PlayerFace";
+import { cardAtom, readingAtom, unitAtom } from "../state";
+import { WeatherFace } from "./WeatherFace";
 
 interface Props {
   /** The layers page is open: fly out and explode. Otherwise fly home and land. */
@@ -46,7 +46,7 @@ const phase = (p: number, a: number, b: number) => {
 export function LayerStack({ open, shown, layer, liquid, onLanded }: Props) {
   const card = useAtomValue(cardAtom);
   const reading = useAtomValue(readingAtom);
-  const { t, playing } = useAtomValue(playbackAtom);
+  const unit = useAtomValue(unitAtom);
   const root = useRef<HTMLDivElement>(null);
   const panes = useRef<(HTMLElement | null)[]>([]);
   const progress = useRef(0);
@@ -158,7 +158,7 @@ export function LayerStack({ open, shown, layer, liquid, onLanded }: Props) {
       <div ref={pane(3)} {...stylex.props(styles.pane, styles.tint)} />
       <div ref={pane(4)} {...stylex.props(styles.pane, styles.rim)} />
       <div ref={pane(5)} {...stylex.props(styles.pane, styles.ink)}>
-        <PlayerFace t={t} duration={DURATION} playing={playing} />
+        <WeatherFace unit={unit} />
       </div>
     </div>
   );
@@ -230,7 +230,7 @@ const styles = stylex.create({
   ink: {
     position: "relative",
     height: "auto",
-    paddingBlock: "18px 14px",
+    paddingBlock: "18px 16px",
     paddingInline: 20,
   },
 });

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SectionPath } from "../router";
 import { themeAtom } from "../state";
 import { LayerStack } from "./LayerStack";
-import { Player } from "./Player";
+import { WeatherCard } from "./WeatherCard";
 import { ThemeButton } from "./ThemeButton";
 import { TintPill } from "./TintPill";
 
@@ -36,7 +36,7 @@ export function Stage({ section }: { section: SectionPath }) {
         liquid={liquid}
         onLanded={() => setReturning(false)}
       />
-      <Player hidden={stackShown} />
+      <WeatherCard hidden={stackShown} />
       <ThemeButton />
       <TintPill visible={section === "/"} />
     </Liquid>

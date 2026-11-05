@@ -1,23 +1,23 @@
 import { Glass } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
-import { DURATION, cardAtom, lensAtom, playbackAtom, readingAtom, tintScaleAtom } from "../state";
-import { PlayerFace, type PlayerAction } from "./PlayerFace";
+import { useLayoutEffect, useRef, useState, type PointerEvent } from "react";
+import { cardAtom, lensAtom, readingAtom, tintAtom, unitAtom } from "../state";
+import { WeatherFace } from "./WeatherFace";
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /**
- * The demo card: glass that you can drag across the liquid. While the layer stack is
+ * The demo card: a weather widget made of glass, which you can drag across the liquid. While the layer stack is
  * on screen it stands in for the card, so the card hides instantly (no fade): the
  * stack starts and ends as a pixel-matched copy of it.
  */
-export function Player({ hidden }: { hidden: boolean }) {
+export function WeatherCard({ hidden }: { hidden: boolean }) {
   const lens = useAtomValue(lensAtom);
   const setReading = useSetAtom(readingAtom);
-  const tintScale = useAtomValue(tintScaleAtom);
+  const tint = useAtomValue(tintAtom);
   const [pos, setPos] = useAtom(cardAtom);
-  const [{ t, playing }, setPlayback] = useAtom(playbackAtom);
+  const [unit, setUnit] = useAtom(unitAtom);
   const node = useRef<HTMLElement>(null);
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -45,18 +45,6 @@ export function Player({ hidden }: { hidden: boolean }) {
     return () => ro.disconnect();
   }, [setPos]);
 
-  useEffect(() => {
-    if (!playing) return;
-    const id = setInterval(() => setPlayback((p) => ({ ...p, t: (p.t + 0.25) % DURATION })), 250);
-    return () => clearInterval(id);
-  }, [playing, setPlayback]);
-
-  const act = (a: PlayerAction) => {
-    if (a === "play") setPlayback((p) => ({ ...p, playing: !p.playing }));
-    if (a === "replay") setPlayback((p) => ({ ...p, t: Math.max(0, p.t - 15) }));
-    if (a === "prev" || a === "next") setPlayback((p) => ({ ...p, t: 0 }));
-  };
-
   const down = (e: PointerEvent<HTMLElement>) => {
     if (!pos || (e.target as HTMLElement).closest("button, [data-no-drag]")) return;
     drag.current = { x: e.clientX, y: e.clientY, ox: pos.x, oy: pos.y };
@@ -83,38 +71,32 @@ export function Player({ hidden }: { hidden: boolean }) {
       lens={lens}
       as="section"
       ref={node}
-      aria-label="Glass Hours, playing"
+      aria-label="Weather in Kyoto"
       aria-hidden={hidden || undefined}
-      tintScale={tintScale}
+      tint={tint}
       onReading={setReading}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
       onPointerCancel={up}
-      {...stylex.props(styles.player, hidden && styles.hidden, dragging && styles.dragging)}
+      {...stylex.props(styles.card, hidden && styles.hidden, dragging && styles.dragging)}
       style={{
         transform: pos ? `translate(${pos.x}px, ${pos.y}px)` : undefined,
         visibility: pos && !hidden ? undefined : "hidden",
       }}
     >
-      <PlayerFace
-        t={t}
-        duration={DURATION}
-        playing={playing}
-        onAction={act}
-        onSeek={(f) => setPlayback((p) => ({ ...p, t: f * DURATION }))}
-      />
+      <WeatherFace unit={unit} onUnit={setUnit} />
     </Glass>
   );
 }
 
 const styles = stylex.create({
-  player: {
+  card: {
     position: "absolute",
     left: 0,
     top: 0,
     width: "clamp(290px, calc(100% - 40px), 380px)",
-    paddingBlock: "18px 14px",
+    paddingBlock: "18px 16px",
     paddingInline: 20,
     cursor: "grab",
     userSelect: "none",

@@ -17,6 +17,9 @@ import { applyLens, createLensMap, supportsLens, type LensMap } from "./lens";
 /** Dark ink reads on light glass; light ink reads on dark glass. */
 export type Ink = "dark" | "light";
 
+/** A wash strength, 0–1, or `"auto"` to follow the backdrop. */
+export type Tint = number | "auto";
+
 /** What a glass element decided after reading its backdrop. */
 export interface GlassReading extends BackdropReading {
   ink: Ink;
@@ -46,9 +49,11 @@ export interface GlassOwnProps<T extends ElementType = "div"> {
   brightness?: number;
   /**
    * Strength of the wash, 0–1. `"auto"` goes from 6% to 22% as the backdrop gets
-   * busier, so text holds; without a backdrop it settles at 12%.
+   * busier, so text holds; without a backdrop it settles at 12%. Pass
+   * `{ light, dark }` to keep light glass (dark ink) and dark glass (light ink) apart;
+   * either side may be `"auto"`, and a missing side is `"auto"`.
    */
-  tint?: number | "auto";
+  tint?: Tint | { light?: Tint; dark?: Tint };
   /** Multiplier on the wash, per appearance — light glass and dark glass. */
   tintScale?: number | { light?: number; dark?: number };
   /** `"auto"` picks dark ink over bright backdrops and light ink over dim ones. */
@@ -157,9 +162,13 @@ export function Glass<T extends ElementType = "div">({
     typeof tintScale === "number" ? tintScale : (tintScale[appearance] ?? 1);
   const scaleLight = scaleFor("light");
   const scaleDark = scaleFor("dark");
+  // Dark ink sits on light glass, light ink on dark glass.
+  const tintLight: Tint = typeof tint === "object" ? (tint.light ?? "auto") : tint;
+  const tintDark: Tint = typeof tint === "object" ? (tint.dark ?? "auto") : tint;
   const fixedInk: Ink = ink === "auto" ? "dark" : ink;
+  const fixedSpec = fixedInk === "dark" ? tintLight : tintDark;
   const fixedTint = clamp(
-    (tint === "auto" ? 0.12 : tint) * (fixedInk === "dark" ? scaleLight : scaleDark),
+    (fixedSpec === "auto" ? 0.12 : fixedSpec) * (fixedInk === "dark" ? scaleLight : scaleDark),
     0,
     0.75,
   );
@@ -179,7 +188,8 @@ export function Glass<T extends ElementType = "div">({
       else if (next === "light" && r.luminance > 0.53) next = "dark";
     }
     inkNow.current = next;
-    const base = tint === "auto" ? 0.06 + 0.16 * clamp((r.busyness - 0.04) / 0.26, 0, 1) : tint;
+    const spec = next === "dark" ? tintLight : tintDark;
+    const base = spec === "auto" ? 0.06 + 0.16 * clamp((r.busyness - 0.04) / 0.26, 0, 1) : spec;
     const alpha = clamp(base * (next === "dark" ? scaleLight : scaleDark), 0, 0.75);
     el.dataset.ink = next;
     el.style.setProperty("--lg-tint-a", alpha.toFixed(3));
@@ -195,7 +205,7 @@ export function Glass<T extends ElementType = "div">({
   // Settings changed: re-read now rather than at the next tick.
   useEffect(() => {
     if (backdrop) read();
-  }, [backdrop, ink, tint, scaleLight, scaleDark]);
+  }, [backdrop, ink, tintLight, tintDark, scaleLight, scaleDark]);
 
   // The canvas lens: copy what is under the glass (plus a margin), bend it with the
   // same map the filter uses, and let CSS blur it. Runs once per backdrop frame.

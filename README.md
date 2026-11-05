@@ -10,7 +10,7 @@ A rim that bends the light, a line where it catches, and ink that reads the wall
 [![minzipped](https://img.shields.io/badge/minzipped-7%20kB-3a7cf0)](./packages/liquidglass)
 [![license](https://img.shields.io/badge/license-MIT-3a7cf0)](./LICENSE)
 
-<a href="https://mywsq.github.io/liquidglass/"><img src="https://raw.githubusercontent.com/myWsq/liquidglass/main/assets/hero.jpg" alt="A glass music player floating over a flowing blue liquid; the wallpaper bends at the card's edge." width="100%" /></a>
+<a href="https://mywsq.github.io/liquidglass/"><img src="https://raw.githubusercontent.com/myWsq/liquidglass/main/assets/hero.jpg" alt="A glass weather widget floating over a flowing blue liquid; the wallpaper bends at its edge." width="100%" /></a>
 
 **[Live demo](https://mywsq.github.io/liquidglass/)** · [npm](https://www.npmjs.com/package/@myna/liquidglass) · [GitHub](https://github.com/myWsq/liquidglass)
 
@@ -53,8 +53,8 @@ export function App() {
   return (
     <Liquid theme="light" style={{ height: "100vh" }}>
       <Glass as="section" style={{ width: 380, padding: 20 }}>
-        <h2 className="liquidglass-ink">Glass Hours</h2>
-        <p className="liquidglass-sub">The Lumno Band</p>
+        <h2 className="liquidglass-ink">Kyoto · 23°</h2>
+        <p className="liquidglass-sub">Partly cloudy, H:26° L:17°</p>
       </Glass>
     </Liquid>
   );
@@ -136,21 +136,21 @@ the pixels over so the canvas lens can refract them outside Chromium.
 
 Renders a `div` by default; pass `as` for any other element, and its props come along.
 
-| Prop                               | Default              | Description                                                                |
-| ---------------------------------- | -------------------- | -------------------------------------------------------------------------- |
-| `as`                               | `"div"`              | Element or component to render.                                            |
-| `radius`                           | `28`                 | Corner radius in px, or `"pill"`.                                          |
-| `rim`                              | `44`                 | Width of the refracting band, px.                                          |
-| `refraction`                       | `1.1`                | How far the rim reaches inward, × `rim`.                                   |
-| `falloff`                          | `2.6`                | How quickly the bend eases off away from the edge.                         |
-| `magnify`                          | `0.05`               | Pull toward the middle.                                                    |
-| `dispersion`                       | `0.15`               | Colour split at the rim.                                                   |
-| `blur` · `saturate` · `brightness` | `2` · `1.8` · `1.06` | The backdrop filter.                                                       |
-| `tint`                             | `"auto"`             | Wash strength 0–1. `"auto"`: 6–22% by busyness, 12% without a backdrop.    |
-| `tintScale`                        | `1`                  | Multiplier on the wash: a number, or `{ light, dark }` per appearance.     |
-| `ink`                              | `"auto"`             | `"dark"`, `"light"`, or chosen from the backdrop.                          |
-| `lens`                             | `"auto"`             | `"filter"`, `"canvas"`, `false`, or the best one this browser can run.     |
-| `onReading`                        |                      | `({ luminance, busyness, ink, tint }) => void`, each time the glass reads. |
+| Prop                               | Default              | Description                                                                    |
+| ---------------------------------- | -------------------- | ------------------------------------------------------------------------------ |
+| `as`                               | `"div"`              | Element or component to render.                                                |
+| `radius`                           | `28`                 | Corner radius in px, or `"pill"`.                                              |
+| `rim`                              | `44`                 | Width of the refracting band, px.                                              |
+| `refraction`                       | `1.1`                | How far the rim reaches inward, × `rim`.                                       |
+| `falloff`                          | `2.6`                | How quickly the bend eases off away from the edge.                             |
+| `magnify`                          | `0.05`               | Pull toward the middle.                                                        |
+| `dispersion`                       | `0.15`               | Colour split at the rim.                                                       |
+| `blur` · `saturate` · `brightness` | `2` · `1.8` · `1.06` | The backdrop filter.                                                           |
+| `tint`                             | `"auto"`             | Wash 0–1 or `"auto"` (6–22% by busyness), or `{ light, dark }` per appearance. |
+| `tintScale`                        | `1`                  | Multiplier on the wash: a number, or `{ light, dark }` per appearance.         |
+| `ink`                              | `"auto"`             | `"dark"`, `"light"`, or chosen from the backdrop.                              |
+| `lens`                             | `"auto"`             | `"filter"`, `"canvas"`, `false`, or the best one this browser can run.         |
+| `onReading`                        |                      | `({ luminance, busyness, ink, tint }) => void`, each time the glass reads.     |
 
 ### `<Liquid>`
 
