@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.turbo/
+*.tsbuildinfo
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# copied in by `prepack` so the npm page shows them; the sources live at the root
+packages/liquidglass/README.md
+packages/liquidglass/LICENSE

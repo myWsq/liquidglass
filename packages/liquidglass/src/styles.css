@@ -1,0 +1,159 @@
+/* liquidglass — liquid glass.
+ *
+ * Any element turns to glass by trading four declarations for the material's tokens:
+ *
+ *   background:      var(--glass-tint);
+ *   backdrop-filter: var(--glass-blur) var(--glass-lens);
+ *   box-shadow:      var(--glass-edge);
+ *   color:           var(--glass-ink);
+ *
+ * <Glass> sets the inputs (--lg-*) and the lens; everything else lives here.
+ */
+
+/* Registered so ink and wash glide instead of snapping when the backdrop changes. */
+@property --lg-tint-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.12;
+}
+@property --lg-rim-a {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+@property --lg-rim-b {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0.55;
+}
+@property --lg-tint-color {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(255 255 255);
+}
+@property --glass-ink {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(0 0 0 / 86%);
+}
+@property --glass-ink-sub {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: rgb(60 60 67 / 70%);
+}
+
+.liquidglass {
+  /* 04 tint + 05 rim light (the glow just inside the top left) */
+  --glass-tint:
+    radial-gradient(at 0 0, rgb(255 255 255 / calc(0.3 * var(--lg-rim-a))), transparent 55%),
+    linear-gradient(
+      color-mix(in srgb, var(--lg-tint-color) calc(var(--lg-tint-a) * 100%), transparent) 0 0
+    );
+  /* 02 blur & light */
+  --glass-blur: blur(var(--lg-blur, 2px)) saturate(var(--lg-saturate, 1.8))
+    brightness(var(--lg-brightness, 1.06));
+  /* 01 shadow + 05 rim light (bright top-left line, softer bottom-right one) */
+  --lg-rim:
+    inset 1.5px 1.5px 1px -1px rgb(255 255 255 / var(--lg-rim-a)),
+    inset -1.5px -1.5px 1px -1px rgb(255 255 255 / var(--lg-rim-b));
+  --glass-edge: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 6px 24px rgb(0 0 0 / 0.08), var(--lg-rim);
+  --lg-ink-blend: multiply;
+
+  border-radius: var(--lg-radius, 28px);
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur);
+  /* 03 rim lens: url(#…) to the SVG filter <Glass> renders */
+  backdrop-filter: var(--glass-blur) var(--glass-lens,);
+  box-shadow: var(--glass-edge);
+  /* 06 ink */
+  color: var(--glass-ink);
+
+  transition:
+    --lg-tint-a 0.5s ease,
+    --lg-tint-color 0.5s ease,
+    --lg-rim-a 0.5s ease,
+    --lg-rim-b 0.5s ease,
+    --glass-ink 0.45s ease,
+    --glass-ink-sub 0.45s ease;
+}
+
+.liquidglass[data-ink="light"] {
+  --glass-ink: rgb(255 255 255 / 94%);
+  --glass-ink-sub: rgb(235 235 245 / 62%);
+  --lg-tint-color: rgb(12 16 40);
+  --lg-rim-a: 0.8;
+  --lg-rim-b: 0.32;
+  --lg-ink-blend: screen;
+}
+
+/* One ink in two strengths, blended into the glass so it takes on its colour. */
+.liquidglass-ink {
+  color: var(--glass-ink);
+  mix-blend-mode: var(--lg-ink-blend, multiply);
+}
+.liquidglass-sub {
+  color: var(--glass-ink-sub);
+  mix-blend-mode: var(--lg-ink-blend, multiply);
+}
+
+/* The canvas lens (every browser but Chromium): the refracted backdrop sits under the
+ * content, and the tint and rim light move to ::after so they stay on top of it. */
+.liquidglass-refraction {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.liquidglass-refraction > canvas {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  filter: var(--glass-blur);
+}
+.liquidglass[data-lens="canvas"] {
+  isolation: isolate;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.liquidglass[data-lens="canvas"] > .liquidglass-refraction {
+  display: block;
+}
+.liquidglass[data-lens="canvas"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: var(--glass-tint);
+  box-shadow: var(--lg-rim);
+}
+
+.liquidglass-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* <Liquid>: the canvas sits under the children, inside the element's own stacking context. */
+.liquidglass-liquid {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.liquidglass-liquid-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  display: block;
+}

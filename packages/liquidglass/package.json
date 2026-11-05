@@ -1,0 +1,62 @@
+{
+  "name": "@myna/liquidglass",
+  "version": "0.1.0",
+  "description": "Liquid glass for React: a refracting rim, rim light, and ink that reads the wallpaper.",
+  "keywords": [
+    "backdrop-filter",
+    "glass",
+    "glassmorphism",
+    "liquid-glass",
+    "react",
+    "refraction",
+    "shader",
+    "webgl"
+  ],
+  "homepage": "https://mywsq.github.io/liquidglass/",
+  "bugs": "https://github.com/myWsq/liquidglass/issues",
+  "license": "MIT",
+  "author": "Shuaiqi Wang",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/myWsq/liquidglass.git",
+    "directory": "packages/liquidglass"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "liquidglass-source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": {
+      "liquidglass-source": "./src/styles.css",
+      "default": "./dist/styles.css"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc",
+    "prepack": "cp ../../README.md ../../LICENSE ."
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "react": "^19.3.1",
+    "tsdown": "^0.23.5",
+    "typescript": "^7.0.2"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0"
+  }
+}

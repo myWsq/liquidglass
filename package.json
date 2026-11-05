@@ -1,0 +1,23 @@
+{
+  "name": "liquidglass-monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev --filter=@myna/liquidglass-pages...",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "oxlint",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "turbo run build --filter=@myna/liquidglass && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.3",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
+    "turbo": "^2.11.10"
+  },
+  "packageManager": "pnpm@10.29.3"
+}
