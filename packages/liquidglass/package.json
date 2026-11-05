@@ -1,6 +1,6 @@
 {
   "name": "@myna/liquidglass",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Liquid glass for React: a refracting rim, rim light, and ink that reads the wallpaper.",
   "keywords": [
     "backdrop-filter",
