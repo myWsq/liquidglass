@@ -7,7 +7,7 @@
 A rim that bends the light, a line where it catches, and ink that reads the wallpaper.
 
 [![npm](https://img.shields.io/npm/v/@myna/liquidglass?color=3a7cf0&label=npm)](https://www.npmjs.com/package/@myna/liquidglass)
-[![minzipped](https://img.shields.io/badge/minzipped-7%20kB-3a7cf0)](./packages/liquidglass)
+[![minzipped](https://img.shields.io/badge/minzipped-10%20kB-3a7cf0)](./packages/liquidglass)
 [![license](https://img.shields.io/badge/license-MIT-3a7cf0)](./LICENSE)
 
 <a href="https://mywsq.github.io/liquidglass/"><img src="https://raw.githubusercontent.com/myWsq/liquidglass/main/assets/hero.jpg" alt="A glass weather widget floating over a flowing blue liquid; the wallpaper bends at its edge." width="100%" /></a>
@@ -103,10 +103,11 @@ cached by size. It runs one of two ways:
 
 - **Filter** (Chromium). The offsets become an image for an SVG `feDisplacementMap`,
   applied with `backdrop-filter: url(#…)`. It bends whatever is behind the glass.
-- **Canvas** (every other browser). Glass copies the backdrop pixels under it from its
-  `<Liquid>` (or a `<Backdrop>` with `capture`), bends them with the same map on the
-  CPU, once per frame, and lets CSS blur the result. The tint and rim light move to
-  `::after` so they stay on top.
+- **Canvas** (every other browser). Over `<Liquid>`, the liquid bends itself under
+  each glass in its own WebGL pass: same map, colour split, blur, saturate and
+  brightness, inside the glass's rounded rect. Nothing is copied or read back. Over a
+  `<Backdrop>` with `capture`, glass copies the pixels and bends them on the CPU
+  instead. Either way the tint and rim light move to `::after` so they stay on top.
 
 `lens="auto"` picks the filter where it runs and the canvas elsewhere. Glass over
 ordinary page content in Safari or Firefox has no pixels to copy, so it keeps every
@@ -172,8 +173,9 @@ inside reads it.
 ### Lens utilities
 
 `createLensMap({ width, height, radius, rim?, refraction?, falloff?, magnify? })` returns
-the displacement map as offsets and a data URL. `applyLens(imageData, map, options?)` runs
-it on the CPU, for snapshots and diagrams. `supportsLens()` tells you whether the
+the displacement map as offsets and a data URL. `refract(ctx, sourceCanvas, rect, map)`
+bends part of a canvas into a 2D canvas on the GPU, and `applyLens(imageData, map)` does
+the same on the CPU, for snapshots and diagrams. `supportsLens()` tells you whether the
 browser can run it as a filter.
 
 ### `<Backdrop>`
@@ -193,6 +195,22 @@ browser can run it as a filter.
 
 Without WebGL2, `<Liquid>` renders one still frame of the same liquid on the CPU. With
 `prefers-reduced-motion`, it holds still.
+
+## Performance
+
+Measured in Chrome on the demo (four pieces of glass on a full-height `<Liquid>`), with
+the CPU slowed 4× to stand in for a slower machine: 60 fps throughout, with 0.7 ms of
+JavaScript per frame on the filter lens, 2.8 ms on the canvas lens and 4 ms in the
+exploded layer view. The filter lens costs the main thread almost nothing; the work is
+the GPU's. A few things keep it that way:
+
+- The liquid is one full-screen shader, rendered at 0.75× device pixels (`resolution`
+  to trade sharpness for GPU time). It stops drawing while scrolled out of view, and
+  in hidden tabs.
+- Glass reads its backdrop (for ink and wash) from one small thumbnail of the liquid,
+  a few times a second, shared by every glass.
+- The canvas lens bends the liquid inside the liquid's own WebGL pass, with no copies.
+  Copying the frame out per glass cost Safari a third of its frame rate.
 
 ## The demo
 

@@ -7,6 +7,7 @@ import {
   type Context,
   type ReactNode,
 } from "react";
+import type { LensMap } from "./lens";
 
 /** What a glass element learns about the pixels behind it. */
 export interface BackdropReading {
@@ -36,6 +37,24 @@ export interface BackdropSource {
   subscribe(listener: () => void): () => void;
   capture?: BackdropCapture;
   frame?(listener: () => void): () => void;
+  /**
+   * The backdrop bends itself under `el` while it is visible, so the glass needs no copy
+   * of its pixels. `<Liquid>` does this inside its own WebGL pass. Returns an unregister
+   * function. Takes precedence over `capture`.
+   */
+  refract?(el: HTMLElement, lens: BackdropLens): () => void;
+}
+
+/** What a backdrop needs to bend itself under a glass element. */
+export interface BackdropLens {
+  map: LensMap;
+  /** Corner radius, CSS px. */
+  radius: number;
+  dispersion: number;
+  /** The glass's backdrop filter: blur in CSS px, saturation, brightness. */
+  blur: number;
+  saturate: number;
+  brightness: number;
 }
 
 export const BackdropContext: Context<BackdropSource | null> = createContext<BackdropSource | null>(
@@ -85,7 +104,7 @@ export function Backdrop({ sample, capture, interval = 200, children }: Backdrop
 /** A backdrop source with a listener set; `notify` asks every glass to re-read. */
 export function createSource(
   sample: (rect: DOMRect) => BackdropReading | null,
-  extra: Pick<BackdropSource, "capture" | "frame"> = {},
+  extra: Pick<BackdropSource, "capture" | "frame" | "refract"> = {},
 ): BackdropSource & { notify: () => void } {
   const listeners = new Set<() => void>();
   return {

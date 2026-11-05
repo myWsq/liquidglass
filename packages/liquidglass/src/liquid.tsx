@@ -83,8 +83,19 @@ export function Liquid({
     e.start();
     const ro = new ResizeObserver(() => e.resize());
     ro.observe(el);
+    // Nothing to draw while the liquid is scrolled out of view (hidden tabs pause on
+    // their own): stop the frame loop until it is back.
+    let running = true;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting === running) return;
+      running = entry.isIntersecting;
+      if (running) e.start();
+      else e.stop();
+    });
+    io.observe(el);
     setEngine(e);
     return () => {
+      io.disconnect();
       ro.disconnect();
       e.destroy();
       setEngine(null);

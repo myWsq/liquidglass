@@ -14,10 +14,12 @@ export {
   canvasSampler,
   useBackdrop,
   type BackdropCapture,
+  type BackdropLens,
   type BackdropProps,
   type BackdropReading,
   type BackdropSource,
 } from "./backdrop";
+export { refract, supportsGPULens, type RefractOptions } from "./gpu-lens";
 export {
   applyLens,
   createLensMap,

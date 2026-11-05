@@ -11,7 +11,7 @@ export function ThemeButton() {
   const tint = useAtomValue(tintAtom);
   return (
     <Glass
-      lens={lens}
+      lens={lens === "off" ? false : lens}
       as="button"
       type="button"
       radius="pill"

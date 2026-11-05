@@ -115,7 +115,10 @@
   height: calc(100% + 12px);
   filter: var(--glass-blur);
 }
-.liquidglass[data-lens="canvas"] {
+/* "backdrop": the liquid behind already bent itself under the glass, so the glass only
+ * adds its tint and rim light, like the canvas lens. */
+.liquidglass[data-lens="canvas"],
+.liquidglass[data-lens="backdrop"] {
   isolation: isolate;
   background: none;
   -webkit-backdrop-filter: none;
@@ -124,7 +127,8 @@
 .liquidglass[data-lens="canvas"] > .liquidglass-refraction {
   display: block;
 }
-.liquidglass[data-lens="canvas"]::after {
+.liquidglass[data-lens="canvas"]::after,
+.liquidglass[data-lens="backdrop"]::after {
   content: "";
   position: absolute;
   inset: 0;

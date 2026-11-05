@@ -1,4 +1,4 @@
-import { applyLens, createLensMap, type LiquidHandle } from "@myna/liquidglass";
+import { applyLens, createLensMap, refract, type LiquidHandle } from "@myna/liquidglass";
 import * as stylex from "@stylexjs/stylex";
 import { useAtomValue } from "jotai";
 import { useEffectEvent, useLayoutEffect, useRef, useState, type RefObject } from "react";
@@ -346,7 +346,11 @@ export function LayerStack({ open, shown, liquid, onLanded }: Props) {
   );
 }
 
-/** Cuts the liquid under the stack's footprint into the blur pane, and the lens pane. */
+/**
+ * Cuts the liquid under the stack's footprint into the blur pane and the lens pane. Both
+ * stay on the GPU: the blur is a canvas filter, the lens the shared GPU lens pass. Only
+ * without WebGL2 does the lens fall back to bending pixels on the CPU.
+ */
 function paintBackdrop(
   handle: LiquidHandle | null,
   x: number,
@@ -361,23 +365,34 @@ function paintBackdrop(
   if (!box.width) return;
   const k = src.width / box.width;
   handle.draw();
-  panes.forEach((pane, i) => {
-    const cv = pane?.querySelector("canvas");
-    if (!cv) return;
-    if (cv.width !== w || cv.height !== h) {
+  const [blur, lens] = panes.map((pane) => pane?.querySelector("canvas") ?? null);
+  for (const cv of [blur, lens]) {
+    if (cv && (cv.width !== w || cv.height !== h)) {
       cv.width = w;
       cv.height = h;
     }
-    const c = cv.getContext("2d", { willReadFrequently: true });
-    if (!c) return;
-    c.filter = "blur(2px) saturate(1.8) brightness(1.06)";
-    c.drawImage(src, x * k, y * k, w * k, h * k, 0, 0, w, h);
-    if (i === 1) {
-      const map = createLensMap({ width: w, height: h, radius: 28 });
-      c.putImageData(applyLens(c.getImageData(0, 0, w, h), map), 0, 0);
-    }
-  });
+  }
+  const b = blur?.getContext("2d");
+  if (b) {
+    b.filter = FILTER;
+    b.drawImage(src, x * k, y * k, w * k, h * k, 0, 0, w, h);
+  }
+  const l = lens?.getContext("2d");
+  if (!lens || !l) return;
+  const map = createLensMap({ width: w, height: h, radius: 28 });
+  const at = new DOMRect(box.left + x, box.top + y, w, h);
+  // The lens bends the raw liquid; the pane's own CSS filter adds the blur and light.
+  if (refract(l, src, at, map)) {
+    lens.style.filter = FILTER;
+    return;
+  }
+  lens.style.filter = "";
+  l.filter = FILTER;
+  l.drawImage(src, x * k, y * k, w * k, h * k, 0, 0, w, h);
+  l.putImageData(applyLens(l.getImageData(0, 0, w, h), map), 0, 0);
 }
+
+const FILTER = "blur(2px) saturate(1.8) brightness(1.06)";
 
 const styles = stylex.create({
   stack: {

@@ -73,8 +73,8 @@ export function Material() {
       </div>
       <Hint>
         This is the card on the stage: change the lens or the tint and its props follow. The SVG
-        filter is Chromium’s; the canvas copies the liquid under the glass and bends it on the CPU,
-        which every browser can do.
+        filter is Chromium’s; on the canvas lens the liquid bends itself under the glass, on the
+        GPU, which every browser can do.
       </Hint>
       {filterOk ? null : (
         <div {...stylex.props(styles.banner)}>

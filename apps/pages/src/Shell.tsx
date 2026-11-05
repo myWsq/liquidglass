@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Outlet } from "@tanstack/react-router";
+import { PerfMeter, showPerf } from "./PerfMeter";
 import { Stage } from "./stage/Stage";
 
 export function Shell() {
@@ -18,6 +19,7 @@ export function Shell() {
         </header>
         <Outlet />
       </section>
+      {showPerf ? <PerfMeter /> : null}
     </main>
   );
 }

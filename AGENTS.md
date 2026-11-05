@@ -13,8 +13,10 @@ What an agent needs to maintain liquidglass that the code does not say on its ow
 - **Defaults come from the reference spec** in `wiki/research/liquid-glass-reference.md` (rim 44px, refraction 1.1, falloff 2.6, magnify 5%, dispersion ±15%, blur 2px / saturate 1.8 / brightness 1.06, wash 6–22%). Change them only deliberately, and update that page.
 - **Ink hysteresis** is 0.47 → light, 0.53 → dark. A single 0.5 threshold flickers while the liquid moves.
 - **Glass writes readings to the DOM, not to React state.** The backdrop is re-read about five times a second; re-rendering for that would be waste. Anything that must survive a render (`data-ink`, `--lg-tint-a`) is therefore _not_ passed as a prop when a backdrop is present.
-- **The lens has two engines.** The SVG filter (`url()` inside `backdrop-filter`) only renders in Chromium; `supportsLens()` uses UA brands because `CSS.supports` only tests whether a value parses. Everywhere else, `lens="auto"` uses the canvas lens: the glass calls `backdrop.capture()` once per `backdrop.frame()`, refracts with `applyLens` on the CPU and lets CSS blur it. It sets `data-lens="canvas"` on the element only after the first successful capture, so a backdrop with nothing to hand over never covers the glass with an empty canvas.
+- **The lens has two engines.** The SVG filter (`url()` inside `backdrop-filter`) only renders in Chromium; `supportsLens()` uses UA brands (falling back to the UA string when brands are empty, as under DevTools emulation) because `CSS.supports` only tests whether a value parses. Everywhere else `lens="auto"` uses the canvas lens. Over `<Liquid>` that means `source.refract(el, lens)`: the engine renders the liquid into an offscreen texture and composites it, bending it with each registered glass's lens map inside its rounded rect (`LENS_FRAG`), skipping glass that is `visibility: hidden` and fading with its opacity; the element gets `data-lens="backdrop"`. Never go back to copying the WebGL frame out per glass: each copy is a GPU read-back, and it cost Safari 60 → 38 fps. Only a `<Backdrop>` with `capture` uses the copy-and-`applyLens` path (`data-lens="canvas"`).
 - **Canvas mode moves the tint and rim light to `::after`.** Inset shadows and the element's own background paint _below_ a `z-index: -1` child, so they would vanish under the refraction canvas. `--lg-rim` holds the inset rim shadows so both places can use it. Glass in canvas mode forces `position: relative` if it was static.
+- **Backdrop readings come from one thumbnail** (`THUMB` px wide), rendered and read back once per reading tick and shared by all glass. Reading the full canvas under each glass stalled the GPU once per glass.
+- **The liquid pauses when offscreen** (IntersectionObserver in `<Liquid>`); `start()` must stay idempotent.
 - **Frame listeners run right after the engine draws**, while the WebGL buffer is still valid (`drawn` flag), so captures don't trigger extra full-screen draws.
 - **The shader and its CPU twin must match.** `FRAG` and `shadeCPU` in `liquid-engine.ts` are the same function. The CPU one is the no-WebGL2 fallback. Edit both together, and compare a frame from each (see Acceptance).
 - **A WebGL canvas is only readable in the task that drew it** (no `preserveDrawingBuffer`). Every read goes through `draw()` first: `sample()`, and the demo's `LiquidHandle.draw()` before `drawImage`.
@@ -48,6 +50,10 @@ There are no tests, by design. Accept changes by driving `pnpm dev` in Chrome:
 6. No console errors; about 60 fps (`requestAnimationFrame` count over 2 s).
 7. For lens changes, also check real Safari: `open -a Safari http://localhost:5199/`, find the window id with `CGWindowListCopyWindowInfo` (a few lines of Swift), and `screencapture -l<id>`. Auto must pick Canvas there.
 8. For engine changes, load with WebGL2 disabled (an `initScript` that makes `getContext("webgl2")` return `null`) and compare the still frame with the GPU frame.
+
+### Measuring performance
+
+Use the production build (`pnpm build`, then `vite preview` in `apps/pages`), not the dev server. In Chrome, wrap `requestAnimationFrame` to time callbacks and count frames over 3 s per state (Material, `?layers`, `?lens=canvas`), at 1× and with DevTools CPU throttling 4×; targets are the display rate and a few ms of JS per frame. `?perf` shows an fps/p95 meter on the page for browsers that can't be scripted; `?lens=filter|canvas|off` and `?layers` set the starting state.
 
 ## Tooling
 

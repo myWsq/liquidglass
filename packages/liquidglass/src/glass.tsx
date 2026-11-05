@@ -118,7 +118,7 @@ export function Glass<T extends ElementType = "div">({
   const backdrop = useBackdrop();
 
   useLayoutEffect(() => {
-    const canvasOk = backdrop?.capture !== undefined;
+    const canvasOk = backdrop?.refract !== undefined || backdrop?.capture !== undefined;
     const pick: LensMode =
       lens === false
         ? "off"
@@ -207,17 +207,33 @@ export function Glass<T extends ElementType = "div">({
     if (backdrop) read();
   }, [backdrop, ink, tintLight, tintDark, scaleLight, scaleDark]);
 
-  // The canvas lens: copy what is under the glass (plus a margin), bend it with the
-  // same map the filter uses, and let CSS blur it. Runs once per backdrop frame.
+  // The canvas lens. A backdrop that can bend itself (`<Liquid>`) does it under the glass
+  // in its own GPU pass; anything else hands over a copy of its pixels each frame, which
+  // the glass bends on the CPU with the same map the filter uses and lets CSS blur.
   useEffect(() => {
     const el = node.current;
+    if (mode !== "canvas" || !el || !map || !backdrop) return;
+    if (getComputedStyle(el).position === "static") el.style.position = "relative";
+    if (backdrop.refract) {
+      const stop = backdrop.refract(el, {
+        map,
+        radius: cornerRadius,
+        dispersion,
+        blur,
+        saturate,
+        brightness,
+      });
+      el.dataset.lens = "backdrop";
+      return () => {
+        stop();
+        delete el.dataset.lens;
+      };
+    }
     const cv = refractionCanvas.current;
-    if (mode !== "canvas" || !el || !cv || !map || !backdrop?.capture) return;
-    const ctx = cv.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
+    const ctx = cv?.getContext("2d", { willReadFrequently: true });
+    if (!cv || !ctx || !backdrop.capture) return;
     cv.width = map.width + PAD * 2;
     cv.height = map.height + PAD * 2;
-    if (getComputedStyle(el).position === "static") el.style.position = "relative";
     let buffer: ImageData | undefined;
     const paint = () => {
       const r = el.getBoundingClientRect();
@@ -234,7 +250,7 @@ export function Glass<T extends ElementType = "div">({
       stop();
       delete el.dataset.lens;
     };
-  }, [mode, map, backdrop, dispersion]);
+  }, [mode, map, backdrop, dispersion, cornerRadius, blur, saturate, brightness]);
 
   const vars = {
     "--lg-radius": radius === "pill" ? "9999px" : `${radius}px`,

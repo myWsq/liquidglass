@@ -11,7 +11,7 @@ export function ExplodeButton() {
   const [exploded, setExploded] = useAtom(explodedAtom);
   return (
     <Glass
-      lens={lens}
+      lens={lens === "off" ? false : lens}
       as="button"
       type="button"
       radius="pill"

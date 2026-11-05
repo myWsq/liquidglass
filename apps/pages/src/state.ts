@@ -14,7 +14,13 @@ export const tintAtom = atom<{ light: Tint; dark: Tint }>({ light: "auto", dark:
 export const readingAtom = atom<GlassReading | null>(null);
 
 /** How the rim lens runs: the browser's filter, the canvas fallback, or whichever fits. */
-export const lensAtom = atom<"auto" | "filter" | "canvas">("auto");
+type LensMode = "auto" | "filter" | "canvas" | "off";
+// `?lens=canvas|filter|off` picks the starting mode (handy for measuring a browser).
+const lensParam =
+  typeof location === "undefined" ? null : new URLSearchParams(location.search).get("lens");
+export const lensAtom = atom<LensMode>(
+  lensParam === "canvas" || lensParam === "filter" || lensParam === "off" ? lensParam : "auto",
+);
 
 /** Where the card sits on the stage (top-left, px). The layer stack takes off from here. */
 export const cardAtom = atom<{ x: number; y: number } | null>(null);
@@ -23,4 +29,6 @@ export const cardAtom = atom<{ x: number; y: number } | null>(null);
 export const unitAtom = atom<"c" | "f">("c");
 
 /** The card pulled apart into its six layers (the toggle in the stage's top-right corner). */
-export const explodedAtom = atom(false);
+export const explodedAtom = atom(
+  typeof location !== "undefined" && new URLSearchParams(location.search).has("layers"),
+);

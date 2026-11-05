@@ -28,7 +28,7 @@ export function TintPill({ visible }: { visible: boolean }) {
 
   return (
     <Glass
-      lens={lens}
+      lens={lens === "off" ? false : lens}
       tint={tint}
       role="group"
       aria-label={`Tint for ${appearance} glass`}

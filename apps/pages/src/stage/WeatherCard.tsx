@@ -68,7 +68,7 @@ export function WeatherCard({ hidden }: { hidden: boolean }) {
 
   return (
     <Glass
-      lens={lens}
+      lens={lens === "off" ? false : lens}
       as="section"
       ref={node}
       aria-label="Weather in Kyoto"

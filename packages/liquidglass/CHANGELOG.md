@@ -12,3 +12,4 @@
   - `<Liquid>`: a flowing liquid wallpaper (WebGL2, with a still CPU fallback) that glass inside can read and refract.
   - `<Backdrop>`, `canvasSampler` and `canvasCapture` make any wallpaper readable.
   - Ships as a client module, so it works in React Server Components apps.
+  - Fast: the canvas lens bends the liquid in its own WebGL pass (no read-backs), readings share one thumbnail, and the liquid pauses while offscreen.

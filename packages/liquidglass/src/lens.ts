@@ -181,7 +181,8 @@ export function supportsLens(): boolean {
   if (typeof navigator === "undefined") return false;
   const brands = (navigator as Navigator & { userAgentData?: { brands?: { brand: string }[] } })
     .userAgentData?.brands;
-  if (brands) return brands.some((b) => /Chromium/.test(b.brand));
+  // Brands can be empty (e.g. under DevTools emulation); fall back to the UA string then.
+  if (brands?.length) return brands.some((b) => /Chromium/.test(b.brand));
   const ua = navigator.userAgent;
   return /Chrome\/|Chromium\//.test(ua) && !/Firefox|FxiOS|CriOS|EdgiOS/.test(ua);
 }
